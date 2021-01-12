@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered form">
+    <h1 style="padding-bottom: 10px"><span th:text="#{register.form}"></span></h1>
+    <form method="post" th:action="@{/register}" th:object="${user}">
+        <ul class="alert alert-danger" style="font-weight: bold" th:if="${#fields.hasErrors('*')}">
+            <p th:each="error : ${#fields.errors('*')}" th:text="${error}"></p>
+        </ul>
+        <table>
+            <tr>
+                <td style="padding-top: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="username"><i class="glyphicon glyphicon-user"></i></span>
+                        <input aria-describedby="username" autofocus class="form-control"
+                               style="width: 200px" th:field="*{login}" th:placeholder="#{login.textfield}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px; padding-bottom: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="email"><i class="glyphicon glyphicon-envelope"></i></span>
+                        <input aria-describedby="email" class="form-control" style="width: 200px" th:field="*{email}"
+                               th:placeholder="#{email}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input class="btn btn-primary" th:value="#{register.confirm}" type="submit"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

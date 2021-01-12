@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+    <link rel="stylesheet" th:href="@{/tables/datatables.min.css}">
+    <link rel="stylesheet" th:href="@{/tables/Editor-1.9.2/css/editor.bootstrap.min.css}">
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered-top">
+    <h2 style="text-align: center" th:text="#{offers}"></h2>
+    <table class="table table-striped" th:id="my_offers">
+        <thead class="tablebar">
+        <tr>
+            <th th:text="#{title}"></th>
+            <th th:text="#{author}"></th>
+            <th th:text="#{genre}"></th>
+            <th th:text="#{number.of.pages}"></th>
+            <th th:text="#{publisher}"></th>
+            <th th:text="#{release.year}"></th>
+            <th th:text="#{seller}"></th>
+            <th th:text="#{price}"></th>
+            <th></th>
+        </tr>
+        </thead>
+    </table>
+</div>
+
+<script th:src="@{/tables/datatables.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/dataTables.editor.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/editor.bootstrap.min.js}"></script>
+<script th:src="@{/js/jsonpath.js}"></script>
+<script th:inline="javascript">
+    $(document).ready(function () {
+        let $offers = $("#my_offers");
+        let $lang = $('#select-lang');
+        let $csrf = $("meta[name='_csrf']");
+        let editor;
+
+        $offers.DataTable(
+            {
+                language: {
+                    url: "/tables/translations/" + $lang.val() + ".json",
+                    decimal: ","
+                },
+                ajax: {
+                    url: '/api/market/offers',
+                    dataSrc: '',
+                },
+                columns: [
+                    {data: 'book.title'},
+                    {data: 'book.author'},
+                    {
+                        data: 'book.genre',
+                        render: function (data) {
+                            return data.name;
+                        }
+                    },
+                    {data: 'book.pages'},
+                    {data: 'book.publisher'},
+                    {data: 'book.releaseYear'},
+                    {
+                        data: 'book.owner',
+                        render: function (data) {
+                            return data.login;
+                        }
+                    },
+                    {
+                        data: 'book.price',
+                        render: function (data) {
+                            return data === 0 ? "-" : $.fn.dataTable.render.number(' ', ',', 2).display(data);
+                        }
+                    },
+                    {
+                        data: null,
+                        defaultContent: '<a href="" class="btn btn-danger editor_remove"><i class="glyphicon glyphicon-trash"></i> '
+                                        + [[#{delete}]] + '</a>'
+                    }
+                ],
+                autoWidth: false,
+                columnDefs: [
+                    {"className": "text-center", "targets": "_all"},
+                    {"orderable": false, "targets": 8}
+                ],
+                dom: 'frtlip'
+            }
+        );
+
+        editor = new $.fn.dataTable.Editor({
+            ajax: {
+                remove: {
+                    method: 'DELETE',
+                    url: '/api/market/offers/_id_',
+                    headers: {"X-CSRF-TOKEN": $csrf.attr("content")},
+                    contentType: 'application/json',
+                    data: function (data) {
+                        return JSON.stringify(data);
+                    }
+                }
+            },
+            table: "#my_offers",
+            idSrc: "id",
+            fields: [
+                {
+                    label: [[#{id}]],
+                    name: "id",
+                    type: "hidden"
+                }
+            ]
+        });
+
+        $offers.on('click', 'a.editor_remove', function (e) {
+            e.preventDefault();
+
+            editor.remove($(this).closest('tr'), {
+                title: [[#{offer.delete}]],
+                message: [[#{offer.delete.confirm}]],
+                buttons: [
+                    {
+                        text: '<i class="glyphicon glyphicon-trash"></i> ' + [[#{delete}]],
+                        className: "btn btn-danger editor",
+                        action: function () {
+                            this.submit();
+                        }
+                    },
+                    {
+                        text: [[#{cancel}]],
+                        className: "btn editor",
+                        action: function () {
+                            this.close();
+                        }
+                    }
+                ],
+                onBackground: "none"
+            });
+        });
+    });
+</script>
+</body>
+</html>

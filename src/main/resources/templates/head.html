@@ -1,0 +1,15 @@
+<th:block th:fragment="head" th:remove="tag" xmlns:th="http://www.w3.org/1999/xhtml">
+    <meta charset="UTF-8">
+    <meta th:content="${_csrf.token}" th:name="${_csrf.parameterName}"/>
+    <title th:text="#{app}"></title>
+    <link rel="stylesheet" th:href="@{/css/portal-styles.css}">
+    <link rel="stylesheet" th:href="@{/css/flag-icon.css}">
+    <link rel="stylesheet" th:href="@{/css/contextmenu.css}">
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/bootstrap-select.min.css}">
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/bootstrap-select.min.js}"></script>
+    <script th:src="@{/js/contextmenu.js}"></script>
+    <script th:src="@{/js/portal-scripts.js}"></script>
+</th:block>

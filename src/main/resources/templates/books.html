@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+    <link rel="stylesheet" th:href="@{/tables/datatables.min.css}">
+    <link rel="stylesheet" th:href="@{/tables/Editor-1.9.2/css/editor.bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/tooltipster.bundle.min.css}">
+    <link rel="stylesheet" th:href="@{/css/tooltipster-sideTip-shadow.min.css}">
+    <link rel="stylesheet" th:href="@{/css/sweetalert2.min.css}">
+    <link rel="stylesheet" th:href="@{/css/toggle-switch.css}">
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered-top">
+    <h2 style="text-align: center" th:text="#{books}"></h2>
+    <table class="table table-striped" th:id="my_books">
+        <thead class="tablebar">
+        <tr>
+            <th th:text="#{title}"></th>
+            <th th:text="#{author}"></th>
+            <th th:text="#{genre}"></th>
+            <th th:text="#{number.of.pages}"></th>
+            <th th:text="#{publisher}"></th>
+            <th th:text="#{release.year}"></th>
+            <th th:text="#{price}"></th>
+            <th th:text="#{for.sale}"></th>
+            <th></th>
+        </tr>
+        </thead>
+    </table>
+</div>
+
+<script th:src="@{/tables/datatables.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/dataTables.editor.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/editor.bootstrap.min.js}"></script>
+<script th:src="@{/js/tooltipster.bundle.min.js}"></script>
+<script th:src="@{/js/sweetalert2.min.js}"></script>
+<script th:src="@{/js/jsonpath.js}"></script>
+<script th:src="@{/js/my-books.js}"></script>
+<script th:inline="javascript">
+    $(document).ready(function () {
+        let $my_books = $('#my_books');
+        let $lang = $('#select-lang');
+        let $csrf = $("meta[name='_csrf']");
+        let editor;
+
+        $my_books.DataTable(
+            {
+                language: {
+                    url: "/tables/translations/" + $lang.val() + ".json",
+                    decimal: ","
+                },
+                ajax: {
+                    url: '/api/books',
+                    dataSrc: '',
+                },
+                columns: [
+                    {data: 'title'},
+                    {data: 'author'},
+                    {
+                        data: 'genre',
+                        render: function (data) {
+                            return data.name;
+                        }
+                    },
+                    {data: 'pages'},
+                    {data: 'publisher'},
+                    {data: 'releaseYear'},
+                    {
+                        data: 'price',
+                        render: function (data, type) {
+                            if (type === 'display' || type === 'export') {
+                                if (data == null) {
+                                    return "";
+                                } else if (data === 0) {
+                                    return "-";
+                                } else {
+                                    return $.fn.dataTable.render.number(' ', ',', 2).display(data);
+                                }
+                            } else {
+                                return data;
+                            }
+                        }
+                    },
+                    {
+                        data: 'forSale',
+                        render: function (data, type, row) {
+                            switch (type) {
+                                default:
+                                    return data;
+                                case 'display':
+                                    return '<label class="switch"><input type="checkbox" id="chkbox-' + row.id + '" '
+                                           + (data === true ? 'checked ' : '')
+                                           + 'class="editor"><span class="slider round"></span></label>';
+                                case 'export':
+                                    return (data === true) ? 1 : 0;
+                            }
+                        }
+                    },
+                    {
+                        data: null,
+                        defaultContent:
+                            '<a href="" class="btn btn-info show-offers tipster" title="' + [[#{show.offers}]] + '">'
+                            + '<i class="glyphicon glyphicon-search"></i></a>&nbsp;&nbsp;<a href="" class="btn btn-primary editor_edit tipster" title="'
+                            + [[#{edit}]]
+                            + '"><i class="glyphicon glyphicon-pencil"></i></a>&nbsp;&nbsp;<a href="" class="btn btn-danger editor_remove tipster" title="'
+                            + [[#{delete}]] + '"><i class="glyphicon glyphicon-trash"></i></a>'
+                    }
+                ],
+                autoWidth: false,
+                columnDefs: [
+                    {"className": "text-center", "targets": "_all"},
+                    {"orderable": false, "targets": 8}
+                ],
+                dom: 'Bfrtlip',
+                buttons: [
+                    {
+                        extend: "create",
+                        editor: editor,
+                        text: '<i class="glyphicon glyphicon-plus"></i> ' + [[#{book.add}]],
+                        className: "btn btn-success editor",
+                        action: function () {
+                            editor.create({
+                                title: [[#{book.add}]],
+                                buttons: [
+                                    {
+                                        text: '<i class="glyphicon glyphicon-plus"></i> ' + [[#{add}]],
+                                        className: "btn btn-success editor",
+                                        action: function () {
+                                            this.submit();
+                                        }
+                                    },
+                                    {
+                                        text: [[#{cancel}]],
+                                        className: "btn btn-danger editor",
+                                        action: function () {
+                                            this.close();
+                                        }
+                                    }
+                                ],
+                                onBackground: "none"
+                            });
+                        }
+                    },
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="glyphicon glyphicon-download-alt"></i> ' + [[#{export.excel}]],
+                        className: "btn btn-success editor",
+                        title: [[#{books}]],
+                        sheetName: [[#{books}]],
+                        exportOptions: {columns: ":visible:not(:eq(8))", orthogonal: "export"}
+                    }
+                ]
+            }
+        );
+
+        editor = new $.fn.dataTable.Editor({
+            ajax: {
+                create: {
+                    method: 'POST',
+                    url: '/api/books',
+                    headers: {"X-CSRF-TOKEN": $csrf.attr("content")},
+                    contentType: 'application/json',
+                    data: function (data) {
+                        return prepareServerData(data);
+                    }
+                },
+                edit: {
+                    method: 'PUT',
+                    url: '/api/books/_id_',
+                    headers: {"X-CSRF-TOKEN": $csrf.attr("content")},
+                    contentType: 'application/json',
+                    data: function (data) {
+                        return prepareServerData(data);
+                    }
+                },
+                remove: {
+                    method: 'DELETE',
+                    url: '/api/books/_id_',
+                    headers: {"X-CSRF-TOKEN": $csrf.attr("content")},
+                    contentType: 'application/json',
+                    data: function (data) {
+                        return JSON.stringify(data);
+                    }
+                }
+            },
+            table: "#my_books",
+            idSrc: "id",
+            fields: [
+                {
+                    label: [[#{id}]],
+                    name: "id",
+                    type: "hidden"
+                },
+                {
+                    label: [[#{title}]],
+                    name: "title"
+                },
+                {
+                    label: [[#{author}]],
+                    name: "author"
+                },
+                {
+                    label: [[#{genre}]],
+                    name: "genre",
+                    type: "select",
+                    data: function (data) {
+                        return genreList.find(function (element) {
+                            return element.name === data.genre.name;
+                        }).id;
+                    }
+                },
+                {
+                    label: [[#{number.of.pages}]],
+                    name: "pages"
+                },
+                {
+                    label: [[#{publisher}]],
+                    name: "publisher"
+                },
+                {
+                    label: [[#{release.year}]],
+                    name: "releaseYear"
+                },
+                {
+                    label: [[#{for.sale}]],
+                    name: "forSale",
+                    type: "checkbox",
+                    separator: "|",
+                    unselectedValue: false,
+                    options: [
+                        {label: '', value: true}
+                    ]
+                },
+                {
+                    label: [[#{price}]],
+                    name: "price"
+                }
+            ]
+        });
+
+        //if we edit book marked for sale or user clicked slider on not for sale book, enable 'price' field in editor
+        editor.dependent('forSale', function (val) {
+            return (val === 'true' || editor.displayed().length === 1) ? {enable: 'price'} : {
+                disable: 'price',
+                values: {'price': ''}
+            };
+        });
+
+        //after clicking 'for sale' slider (only price field visible) and closing window, show again remaining editor fields
+        editor.on('closed', function () {
+            $.each(editor.fields(), function (k, v) {
+                editor.field(v).show();
+            });
+            editor.field('id').hide();
+        });
+
+        editor.on('postSubmit', function (e, json) {
+            json.data = [json];
+        });
+
+        $my_books.on('click', 'a.editor_edit', function (e) {
+            e.preventDefault();
+
+            editor.edit($(this).closest('tr'), {
+                title: [[#{book.edit}]],
+                buttons: [
+                    {
+                        text: '<i class="glyphicon glyphicon-edit"></i> ' + [[#{update}]],
+                        className: "btn btn-success editor",
+                        action: function () {
+                            this.submit();
+                        }
+                    },
+                    {
+                        text: [[#{cancel}]],
+                        className: "btn btn-danger editor",
+                        action: function () {
+                            this.close();
+                        }
+                    }
+                ],
+                onBackground: "none"
+            });
+        });
+
+        $my_books.on('click', 'a.editor_remove', function (e) {
+            e.preventDefault();
+
+            editor.remove($(this).closest('tr'), {
+                title: [[#{book.delete}]],
+                message: [[#{book.delete.confirm}]],
+                buttons: [
+                    {
+                        text: '<i class="glyphicon glyphicon-trash"></i> ' + [[#{delete}]],
+                        className: "btn btn-danger editor",
+                        action: function () {
+                            this.submit();
+                        }
+                    },
+                    {
+                        text: [[#{cancel}]],
+                        className: "btn editor",
+                        action: function () {
+                            this.close();
+                        }
+                    }
+                ],
+                onBackground: "none"
+            });
+        });
+
+        //click on 'for sale' slider
+        $my_books.on('change', 'input.editor', function () {
+            //inverse slider
+            $(this).prop('checked', !$(this).prop('checked'));
+
+            //when slider is 'enabled', set 'forSale' to false, remove price and submit book
+            if ($(this).prop('checked')) {
+                editor.edit($(this).closest('tr'), false)
+                      .set('forSale', false)
+                      .set('price', '')
+                      .submit();
+                $(this).prop('checked', false);
+            } else {    //show editor window with only price field visible
+                $.each(editor.fields(), function (k, v) {
+                    editor.field(v).hide();
+                });
+                editor.field('price').show();
+
+                editor.edit($(this).closest('tr'), {
+                    title: [[#{price.set}]],
+                    buttons: [
+                        {
+                            text: '<i class="glyphicon glyphicon-edit"></i> ' + [[#{confirm}]],
+                            className: "btn btn-success editor",
+                            action: function () {
+                                $('#chkbox-' + this.get('id')).prop('checked', true);
+                                this.set('forSale', true).submit();
+                            }
+                        },
+                        {
+                            text: [[#{cancel}]],
+                            className: "btn btn-danger editor",
+                            action: function () {
+                                this.close();
+                            }
+                        }
+                    ],
+                    focus: 'price',
+                    onBackground: "none"
+                });
+            }
+        });
+
+        //click 'show offers' button
+        $(document).on("click", "a.show-offers", function (e) {
+            e.preventDefault();
+
+            if ($(this).attr("disabled") === "disabled") {
+                return;
+            }
+
+            let row = $my_books.DataTable().row(this.closest('tr'));
+            let book = row.data();
+
+            //show pop-up with offer list for this book
+            Swal.fire({
+                title: [[#{offers.for}]] + '<br>' + book.title,
+                width: '30%',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                showCloseButton: true,
+                allowEnterKey: false,
+                html: '<table class="table table-striped" id="offers">' +
+                    '<thead class="tablebar">' +
+                    '<tr><th>' + [[#{user}]] + '</th><th></th></tr>' +
+                    '</thead>' +
+                    '</table>',
+                onBeforeOpen: function () {
+                    $("#offers").DataTable({
+                        language: {
+                            url: "/tables/translations/" + $lang.val() + ".json"
+                        },
+                        ajax: {
+                            url: '/api/market/offers/book/' + book.id,
+                            dataSrc: '',
+                        },
+                        columns: [
+                            {data: 'buyer.login'},
+                            {
+                                data: null,
+                                defaultContent: '<a href="" class="btn btn-success tool-tip" title="' + [[#{accept.offer}]]
+                                    + '"><i class="glyphicon glyphicon-ok"></i></a>'
+                            }
+                        ],
+                        autoWidth: false,
+                        columnDefs: [
+                            {"className": "text-center", "targets": "_all"},
+                            {"orderable": false, "targets": 1}
+                        ],
+                        createdRow: function (row) {
+                            $(row).addClass('large-text');
+                        },
+                        dom: 'tp',
+                    });
+                },
+                onOpen: async function () {
+                    await new Promise(r => setTimeout(r, 500));    //wait 500 ms for tooltips to load
+                    loadToolTips($('.tool-tip'));
+
+                    $("#offers").on('click', 'a.tool-tip', function (e) {
+                        e.preventDefault();
+                        let offer = $("#offers").DataTable().row(this.closest('tr')).data();
+
+                        $.ajax({
+                            url: "/api/market/offers/accept",
+                            method: "post",
+                            headers: {"X-CSRF-TOKEN": $("meta[name='_csrf']").attr("content")},
+                            data: JSON.stringify(offer),
+                            contentType: "application/json; charset=utf-8"
+                        }).done(function () {
+                            Swal.clickConfirm();
+                        });
+                    });
+                }
+            }).then(function (result) {
+                if (result.value) {
+                    $my_books.DataTable().row(row).remove().draw();
+                    Swal.fire({
+                        icon: 'success',
+                        customClass: "customalert",
+                        title: [[#{sold}]],
+                        html: '<span class="large-text">' + book.title + '</span>',
+                        allowOutsideClick: false
+                    });
+                }
+            });
+        });
+
+        $my_books.on('draw.dt', function () {
+            loadToolTips($('.tipster'));
+        });
+
+        $my_books.on({
+            mouseenter: function () {
+                let row = $my_books.DataTable().row(this.closest('tr'));
+                if (!row.data().forSale) {
+                    let node = row.node();
+                    $(node).find("a.show-offers").attr("disabled", true);
+                }
+            },
+            mouseleave: function () {
+                let node = $my_books.DataTable().row(this.closest('tr')).node();
+                $(node).find("a.show-offers").removeAttr('disabled');
+            }
+        }, "a.show-offers");
+
+        loadGenres(editor);
+    });
+</script>
+</body>
+</html>

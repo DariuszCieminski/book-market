@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered form">
+    <h1 style="padding-bottom: 30px"><span th:text="#{switchuser}"></span></h1>
+    <form method="get" th:action="@{/impersonate}">
+        <table>
+            <tr th:if="${#request.getAttribute('loginError') != null}">
+                <td class="alert alert-danger" style="font-weight: bold" th:text="#{login.invalid}"></td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="username"><i class="glyphicon glyphicon-user"></i></span>
+                        <input aria-describedby="username" autofocus class="form-control"
+                               style="width: 200px" th:name="username" th:placeholder="#{login.textfield}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input class="btn btn-primary" th:value="#{switchuser}" type="submit"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

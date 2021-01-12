@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:sec="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-static-top" th:fragment="menu">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <img class="app-logo" th:src="@{/favicon.ico}">
+            <a class="navbar-brand" th:text="#{app}"></a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li>
+                <a th:href="@{/}"><i aria-hidden="true" class="glyphicon glyphicon-home"></i> <span
+                    th:text="#{home}"></span></a>
+            </li>
+            <li sec:authorize="hasRole('ADMIN')">
+                <a th:href="@{/admin}"><i aria-hidden="true" class="glyphicon glyphicon-wrench"></i> <span
+                    th:text="#{admin}"></span></a>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <a th:href="@{/books}"><i aria-hidden="true" class="glyphicon glyphicon-book"></i> <span
+                    th:text="#{books}"></span></a>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <a th:href="@{/offers}"><i aria-hidden="true" class="glyphicon glyphicon-list-alt"></i> <span
+                    th:text="#{offers}"></span></a>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <a th:href="@{/market}"><i aria-hidden="true" class="glyphicon glyphicon-shopping-cart"></i> <span
+                    th:text="#{market}"></span></a>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+            <li sec:authorize="isAuthenticated()">
+                <div class="navbar-text" style="font-weight: bold">
+                    <span th:remove="tag" th:text="#{user} + ': '"></span><span sec:authentication="name"
+                                                                                th:remove="tag"></span>
+                </div>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <div class="dropdown">
+                    <button aria-hidden="true" class="btn btn-link navbar-btn" style="position: relative" th:id="message-btn"
+                            type="button">
+                        <i class='glyphicon glyphicon-comment'></i><span class="message-badge" th:id="counter"></span>
+                    </button>
+                </div>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <div class="dropdown">
+                    <button aria-hidden="true" class="btn btn-link navbar-btn" data-toggle="dropdown" type="button">
+                        <i class='glyphicon glyphicon-cog'></i>
+                    </button>
+                    <ul class="dropdown-menu" style="margin-right: -150%">
+                        <li sec:authorize="!hasRole('SUPERUSER')"><a th:href="@{/changepassword}"
+                                                                     th:text="#{change.password.title}"></a></li>
+                        <li sec:authorize="!hasRole('SUPERUSER')"><a th:href="@{/changeemail}"
+                                                                     th:text="#{change.email.title}"></a></li>
+                        <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/switchuser}" th:text="#{switchuser}"></a></li>
+                        <li sec:authorize="hasRole('ROLE_PREVIOUS_ADMINISTRATOR')"><a th:href="@{/canceluserswitch}"><span
+                            th:remove="tag" th:text="#{logout}"></span> (<span sec:authentication="name"
+                                                                               th:remove="tag"></span>)</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li>
+                <select class="selectpicker" data-style="btn btn-link navbar-btn" data-width="100%"
+                        onchange="changeLanguage()" th:id="select-lang">
+                    <option class="selectpicker"
+                            data-content="<i class='flag-icon-pl' style='padding-left: 1.65em; margin-right: 5px'></i>Polski"
+                            data-style="btn-link navbar-btn"
+                            th:value="pl"></option>
+                    <option class="selectpicker"
+                            data-content="<i class='flag-icon-gb' style='padding-left: 1.65em; margin-right: 5px'></i>English"
+                            data-style="btn-link navbar-btn"
+                            th:value="en"></option>
+                </select>
+            </li>
+            <li sec:authorize="!isAuthenticated()">
+                <a th:href="@{/register}">
+                    <i aria-hidden="true" class="glyphicon glyphicon-user"></i> <span th:text="#{register}"></span>
+                </a>
+            </li>
+            <li sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">
+                    <i aria-hidden="true" class="glyphicon glyphicon-log-in"></i> <span th:text="#{login}"></span>
+                </a>
+            </li>
+            <li sec:authorize="isAuthenticated()">
+                <form method="post" th:action="@{/logout}">
+                    <button class="btn btn-link navbar-btn" type="submit">
+                        <i class="glyphicon glyphicon-off"></i> <span th:text="#{logout}"></span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+    <script th:inline="javascript">
+        $("#select-lang").selectpicker("val", getLanguage());
+
+        //translate message templates
+        let translation = new Map();
+        translation.set("new.offer", [[#{new.offer}]])
+                   .set("comment", [[#{comment}]])
+                   .set("book.bought", [[#{book.bought}]])
+                   .set("book.sold", [[#{book.sold}]]);
+
+        $(document).ready(function () {
+            if ([[${#authorization.expression('isAuthenticated()')}]]) {
+                getMessages();
+            }
+        });
+    </script>
+</nav>
+</body>
+</html>

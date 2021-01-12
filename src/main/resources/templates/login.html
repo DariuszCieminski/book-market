@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered form">
+    <h1 style="padding-bottom: 10px"><span th:text="#{login.form}"></span></h1>
+    <form method="post" th:action="@{/login}" th:object="${user}">
+        <table>
+            <tr>
+                <td class="alert alert-danger" style="font-weight: bold" th:if="${error}" th:text="${error}"></td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="username"><i class="glyphicon glyphicon-user"></i></span>
+                        <input aria-describedby="username" autofocus class="form-control"
+                               style="width: 200px" th:field="*{login}" th:placeholder="#{login.textfield}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px; padding-bottom: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="password"><i class="glyphicon glyphicon-lock"></i></span>
+                        <input aria-describedby="password" class="form-control" style="width: 200px"
+                               th:field="*{password}" th:placeholder="#{password}" type="password"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input class="btn btn-primary" th:value="#{login.confirm}" type="submit"></td>
+            </tr>
+            <tr style="margin: 50px auto 10px">
+                <td><b th:text="#{forgotten.password}"></b></td>
+            </tr>
+            <tr>
+                <td><input class="btn btn-success" th:onclick="|window.location.href='/resetpassword'|"
+                           th:value="#{click.here}" type="button"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

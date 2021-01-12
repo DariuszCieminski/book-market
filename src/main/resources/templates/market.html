@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+    <link rel="stylesheet" th:href="@{/tables/datatables.min.css}">
+    <link rel="stylesheet" th:href="@{/tables/Editor-1.9.2/css/editor.bootstrap.min.css}">
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered-top">
+    <h2 style="text-align: center" th:text="#{books.for.sale}"></h2>
+    <table class="table table-striped" th:id="market">
+        <thead class="tablebar">
+        <tr>
+            <th th:text="#{title}"></th>
+            <th th:text="#{author}"></th>
+            <th th:text="#{genre}"></th>
+            <th th:text="#{number.of.pages}"></th>
+            <th th:text="#{publisher}"></th>
+            <th th:text="#{release.year}"></th>
+            <th th:text="#{seller}"></th>
+            <th th:text="#{price}"></th>
+            <th></th>
+        </tr>
+        </thead>
+    </table>
+    <table style="display: none" th:id="offer"></table>        <!-- virtual invisible table, just for sending offers -->
+</div>
+
+<script th:src="@{/tables/datatables.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/dataTables.editor.min.js}"></script>
+<script th:src="@{/tables/Editor-1.9.2/js/editor.bootstrap.min.js}"></script>
+<script th:src="@{/js/jsonpath.js}"></script>
+<script th:inline="javascript">
+    $(document).ready(function () {
+        let $market = $("#market");
+
+        $market.DataTable(
+            {
+                language: {
+                    url: "/tables/translations/" + $('#select-lang').val() + ".json",
+                    decimal: ","
+                },
+                ajax: {
+                    url: '/api/market',
+                    dataSrc: '',
+                },
+                columns: [
+                    {data: 'title'},
+                    {data: 'author'},
+                    {
+                        data: 'genre',
+                        render: function (data) {
+                            return data.name;
+                        }
+                    },
+                    {data: 'pages'},
+                    {data: 'publisher'},
+                    {data: 'releaseYear'},
+                    {
+                        data: 'owner',
+                        render: function (data) {
+                            return data.login;
+                        }
+                    },
+                    {
+                        data: 'price',
+                        render: function (data) {
+                            return data === 0 ? "-" : $.fn.dataTable.render.number(' ', ',', 2).display(data);
+                        }
+                    },
+                    {
+                        data: null,
+                        defaultContent: '<a href="" class="btn btn-success editor_create"><i class="glyphicon glyphicon-piggy-bank"></i> '
+                                        + [[#{make.offer}]] + '</a>'
+                    }
+                ],
+                autoWidth: false,
+                columnDefs: [
+                    {"className": "text-center", "targets": "_all"},
+                    {"orderable": false, "targets": 8}
+                ],
+                dom: 'frtlip'
+            }
+        );
+
+        $("#offer").DataTable({
+            dom: '',
+            columns: [
+                {data: "book"},
+                {data: "comment"}
+            ]
+        });
+
+        let editor = new $.fn.dataTable.Editor({
+            ajax: {
+                create: {
+                    method: 'POST',
+                    url: '/api/market/offers',
+                    headers: {"X-CSRF-TOKEN": $("meta[name='_csrf']").attr("content")},
+                    contentType: 'application/json',
+                    data: function (data) {
+                        return sendOffer(data);
+                    }
+                }
+            },
+            table: "#offer",
+            fields: [
+                {
+                    label: [[#{comment}]],
+                    name: "comment",
+                    type: "textarea"
+                },
+                {
+                    name: "book",
+                    type: "hidden"
+                }
+            ]
+        });
+
+        $market.on('click', 'tbody tr a.editor_create', function (e) {
+            e.preventDefault();
+
+            let book_row = $market.dataTable().api().row(this.closest('tr'));
+            let book_id = book_row.data().id;
+
+            //use editor on fictional table to make offer for selected book
+            editor.create({
+                title: [[#{make.offer}]],
+                buttons: [
+                    {
+                        text: '<i class="glyphicon glyphicon-plus"></i> ' + [[#{confirm}]],
+                        className: "btn btn-success editor",
+                        action: function () {
+                            let book = {};
+                            book.id = book_id;
+                            this.set("book", book).submit();
+                            $market.dataTable().api().row(book_row).remove().draw();
+                        }
+                    },
+                    {
+                        text: [[#{cancel}]],
+                        className: "btn btn-danger editor",
+                        action: function () {
+                            this.close();
+                        }
+                    }
+                ],
+                onBackground: "none"
+            });
+        });
+
+        function sendOffer(data) {
+            data = jsonPath(data, "$.data.*")[0];
+
+            let message = {};
+            message.text = data.comment;
+            data.comment = message;
+
+            return JSON.stringify(data);
+        }
+    });
+</script>
+</body>
+</html>

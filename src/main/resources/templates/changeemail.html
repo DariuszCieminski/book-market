@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div class="centered form">
+    <h1 style="padding-bottom: 10px"><span th:text="#{change.email.title}"></span></h1>
+    <form method="post" th:action="@{/changeemail}" th:object="${mail}">
+        <table>
+            <tr>
+                <td class="alert alert-danger" style="font-weight: bold" th:if="${#fields.hasAnyErrors()}"
+                    th:text="${#fields.allErrors()[0]}"></td>
+                <td class="alert alert-success" style="font-weight: bold" th:if="${success}">
+                    <i class="glyphicon glyphicon-ok"></i> <span th:text="#{change.email.success}"></span></td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px; padding-bottom: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="pass"><i class="glyphicon glyphicon-lock"></i></span>
+                        <input aria-describedby="pass" autofocus class="form-control" style="width: 200px"
+                               th:field="*{password}" th:placeholder="#{password}" type="password"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 20px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="newmail"><i class="glyphicon glyphicon-envelope"></i></span>
+                        <input aria-describedby="newmail" class="form-control" style="width: 200px" th:field="*{newEmail}"
+                               th:placeholder="#{new.email}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 40px">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="confirmmail"><i class="glyphicon glyphicon-envelope"></i></span>
+                        <input aria-describedby="confirmmail" class="form-control" style="width: 200px"
+                               th:field="*{confirmNewEmail}" th:placeholder="#{confirm.new.email}" type="text"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input class="btn btn-primary" th:value="#{change.email.button}" type="submit"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

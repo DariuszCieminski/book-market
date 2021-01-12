@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:sec="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <object th:replace="head::head"></object>
+</head>
+<body>
+<nav th:replace="menu::menu"></nav>
+<div style="margin: 30px;text-align: center">
+    <h1 sec:authorize="isAuthenticated()">
+        <span th:remove="tag" th:text="#{hello}"></span>, <span sec:authentication="name" th:remove="tag"></span>!
+    </h1>
+</div>
+</body>
+</html>
