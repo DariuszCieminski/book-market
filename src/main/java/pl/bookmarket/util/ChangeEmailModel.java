@@ -9,6 +9,15 @@ public class ChangeEmailModel {
     private String newEmail;
     private String confirmNewEmail;
 
+    public ChangeEmailModel() {
+    }
+
+    public ChangeEmailModel(String password, String newEmail, String confirmNewEmail) {
+        this.password = password;
+        this.newEmail = newEmail;
+        this.confirmNewEmail = confirmNewEmail;
+    }
+
     public String getPassword() {
         return password;
     }

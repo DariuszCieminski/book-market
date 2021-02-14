@@ -1,25 +1,21 @@
 package pl.bookmarket.validation.constraints;
 
+import java.util.Arrays;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 public class NotContainValidator implements ConstraintValidator<NotContain, String> {
 
-    private String[] values;
+    private String[] forbiddenValues;
 
     @Override
     public void initialize(NotContain constraintAnnotation) {
-        this.values = constraintAnnotation.values();
+        this.forbiddenValues = constraintAnnotation.values();
     }
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        for (String forbidden : values) {
-            if (value.toLowerCase().contains(forbidden.toLowerCase())) {
-                return false;
-            }
-        }
-
-        return true;
+        return Arrays.stream(forbiddenValues)
+                     .noneMatch(forbiddenValue -> value.toLowerCase().contains(forbiddenValue.toLowerCase()));
     }
 }

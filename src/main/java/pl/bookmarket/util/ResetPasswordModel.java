@@ -8,6 +8,14 @@ public class ResetPasswordModel {
     private String login;
     private String email;
 
+    public ResetPasswordModel() {
+    }
+
+    public ResetPasswordModel(String login, String email) {
+        this.login = login;
+        this.email = email;
+    }
+
     public String getLogin() {
         return login;
     }

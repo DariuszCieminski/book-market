@@ -1,27 +1,30 @@
 package pl.bookmarket.validation.handlers;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
-import pl.bookmarket.service.UserService;
+import org.springframework.stereotype.Component;
+import pl.bookmarket.dao.UserDao;
 
+@Component
 public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
-    private final UserService userService;
+    private final UserDao userDao;
 
-    public LoginSuccessHandler(UserService userService) {
-        this.userService = userService;
+    public LoginSuccessHandler(UserDao userDao) {
+        this.userDao = userDao;
     }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
         if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SUPERUSER"))) {
-            userService.updateLastLoginTime(authentication);
+            userDao.updateLastLoginTime(authentication.getName(), OffsetDateTime.now());
         }
 
         super.onAuthenticationSuccess(request, response, authentication);

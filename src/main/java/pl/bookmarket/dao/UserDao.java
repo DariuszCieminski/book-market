@@ -32,7 +32,7 @@ public interface UserDao extends CrudRepository<User, Long> {
     @Transactional
     @Modifying
     @Query("update User set lastLoginTime=?2 where login=?1")
-    void updateLoginTime(String login, OffsetDateTime time);
+    void updateLastLoginTime(String login, OffsetDateTime time);
 
     @Override
     @EntityGraph(attributePaths = {"roles", "books"})

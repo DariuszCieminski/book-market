@@ -6,6 +6,7 @@ import java.util.Optional;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,7 +24,6 @@ import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.Genre;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.CustomPasswordEncoder;
 import pl.bookmarket.validation.ValidationGroups;
 import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
@@ -36,12 +36,14 @@ public class AdminController {
     private final UserDao userDao;
     private final RoleDao roleDao;
     private final GenreDao genreDao;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminController(UserDao userDao, RoleDao roleDao, GenreDao genreDao) {
+    public AdminController(UserDao userDao, RoleDao roleDao, GenreDao genreDao, PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.roleDao = roleDao;
         this.genreDao = genreDao;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/users")
@@ -64,7 +66,7 @@ public class AdminController {
             throw new ValidationException(result.getFieldErrors());
         }
 
-        user.setPassword(CustomPasswordEncoder.hash(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userDao.save(user);
     }
 
@@ -87,7 +89,7 @@ public class AdminController {
         if (user.getPassword() == null) {
             user.setPassword(dbUser.get().getPassword());
         } else {
-            user.setPassword(CustomPasswordEncoder.hash(user.getPassword()));
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
 
         return userDao.save(user);

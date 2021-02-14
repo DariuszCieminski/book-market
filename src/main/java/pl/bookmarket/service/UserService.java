@@ -1,11 +1,10 @@
 package pl.bookmarket.service;
 
-import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -38,17 +37,12 @@ public class UserService implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
         }
 
-        org.springframework.security.core.userdetails.User.UserBuilder userBuilder =
-                org.springframework.security.core.userdetails.User.builder();
+        UserBuilder userBuilder = org.springframework.security.core.userdetails.User.builder();
 
         return userBuilder.username(username)
                           .password(user.getPassword())
                           .disabled(user.isBlocked())
                           .authorities(authorities)
                           .build();
-    }
-
-    public void updateLastLoginTime(Authentication authentication) {
-        dao.updateLoginTime(authentication.getName(), OffsetDateTime.now());
     }
 }

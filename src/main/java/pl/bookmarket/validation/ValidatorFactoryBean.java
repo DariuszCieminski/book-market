@@ -5,7 +5,7 @@ import org.hibernate.validator.HibernateValidatorConfiguration;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 public class ValidatorFactoryBean extends LocalValidatorFactoryBean {
-    
+
     /*
         Use custom property node name provider to allow resolving property names from Jackson annotations during validation
         

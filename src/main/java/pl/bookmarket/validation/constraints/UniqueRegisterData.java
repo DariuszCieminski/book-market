@@ -9,8 +9,8 @@ import javax.validation.Payload;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = UniqueLoginAndEmailValidator.class)
-public @interface UniqueLoginAndEmail {
+@Constraint(validatedBy = UniqueRegisterDataValidator.class)
+public @interface UniqueRegisterData {
 
     String message() default "";
 

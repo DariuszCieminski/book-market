@@ -27,11 +27,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import pl.bookmarket.util.Views;
 import pl.bookmarket.validation.ValidationGroups;
 import pl.bookmarket.validation.constraints.NotContain;
-import pl.bookmarket.validation.constraints.UniqueLoginAndEmail;
+import pl.bookmarket.validation.constraints.UniqueRegisterData;
 
 @Entity
 @Table(name = "customer")
-@UniqueLoginAndEmail(groups = ValidationGroups.CreateUser.class)
+@UniqueRegisterData(groups = ValidationGroups.CreateUser.class)
 public class User {
 
     @Id

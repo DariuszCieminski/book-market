@@ -9,6 +9,15 @@ public class ChangePasswordModel {
     private String newPassword;
     private String confirmNewPassword;
 
+    public ChangePasswordModel() {
+    }
+
+    public ChangePasswordModel(String oldPassword, String newPassword, String confirmNewPassword) {
+        this.oldPassword = oldPassword;
+        this.newPassword = newPassword;
+        this.confirmNewPassword = confirmNewPassword;
+    }
+
     public String getOldPassword() {
         return oldPassword;
     }

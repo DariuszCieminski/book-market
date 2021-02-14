@@ -3,6 +3,8 @@ package pl.bookmarket;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -11,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -19,23 +22,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import pl.bookmarket.dao.BookDao;
@@ -49,21 +53,17 @@ import pl.bookmarket.model.Message;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.CustomPasswordEncoder;
+import pl.bookmarket.util.ChangeEmailModel;
+import pl.bookmarket.util.ChangePasswordModel;
+import pl.bookmarket.util.CustomBCryptPasswordEncoder;
+import pl.bookmarket.util.ResetPasswordModel;
 
 @SpringBootTest
 @TestInstance(Lifecycle.PER_CLASS)
+@ActiveProfiles("mailDisabled")
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
-public class BookmarketApplicationTests {
-
-    static final UserDetails USER =
-        new org.springframework.security.core.userdetails.User(
-            "user", "user", Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")));
-    static final UserDetails ADMIN =
-        new org.springframework.security.core.userdetails.User(
-            "admin", "admin",
-            Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"), new SimpleGrantedAuthority("ROLE_ADMIN")));
+public class BookMarketApplicationTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -92,17 +92,19 @@ public class BookmarketApplicationTests {
         role.setName("USER");
         role = roleDao.save(role);
 
+        PasswordEncoder encoder = new CustomBCryptPasswordEncoder();
+
         User user = new User();
         user.setLogin("testUser");
-        user.setEmail("test-user@test.pl");
-        user.setPassword(CustomPasswordEncoder.hash("test"));
+        user.setEmail("testuser@test.pl");
+        user.setPassword(encoder.encode("test"));
         user.setRoles(Collections.singleton(role));
         user = userDao.save(user);
 
         User buyer = new User();
         buyer.setLogin("buyer");
         buyer.setEmail("buyer@test.pl");
-        buyer.setPassword(CustomPasswordEncoder.hash("buyer"));
+        buyer.setPassword(encoder.encode("buyer"));
         userDao.save(buyer);
 
         Genre genre = new Genre();
@@ -129,31 +131,33 @@ public class BookmarketApplicationTests {
     }
 
     @Test
+    @WithMockUser
     public void openLoginViewAsAuthenticatedUserReturnForbidden() throws Exception {
-        mockMvc.perform(get("/register").secure(true)
-                                        .with(user(USER)))
+        mockMvc.perform(get("/register").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
     public void registerNewAccountReturnSuccess() throws Exception {
-        pl.bookmarket.model.User newUser = new pl.bookmarket.model.User();
+        User newUser = new User();
         newUser.setLogin("newUser");
         newUser.setEmail("newuser@test.pl");
-        mockMvc.perform(post("/register").flashAttr("user", newUser).secure(true)
-                                         .with(csrf().asHeader()))
-               .andExpect(status().isOk())
+
+        mockMvc.perform(post("/register").flashAttr("user", newUser).secure(true).with(csrf().asHeader()))
+               .andExpect(status().isCreated())
+               .andExpect(model().hasNoErrors())
                .andExpect(view().name("register-success"));
     }
 
     @Test
     public void registerNewAccountWithInvalidDataReturnUnprocessableEntity() throws Exception {
-        pl.bookmarket.model.User newUser = new pl.bookmarket.model.User();
+        User newUser = new User();
         newUser.setLogin("admin");
         newUser.setEmail("superuser");
-        mockMvc.perform(post("/register").flashAttr("user", newUser).secure(true)
-                                         .with(csrf().asHeader()))
+
+        mockMvc.perform(post("/register").flashAttr("user", newUser).secure(true).with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
+               .andExpect(model().hasErrors())
                .andExpect(view().name("register"));
     }
 
@@ -176,127 +180,252 @@ public class BookmarketApplicationTests {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void openAdminViewReturnOk() throws Exception {
-        mockMvc.perform(get("/admin").secure(true)
-                                     .with(user(ADMIN)))
+        mockMvc.perform(get("/admin").secure(true))
                .andExpect(status().isOk())
                .andExpect(view().name("admin"));
     }
 
     @Test
+    @WithMockUser
     public void openAdminViewWithNoAuthorizationReturnDenied() throws Exception {
-        mockMvc.perform(get("/admin").secure(true)
-                                     .with(user(USER)))
+        mockMvc.perform(get("/admin").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void switchUserAsAdminReturnSuccess() throws Exception {
-        mockMvc.perform(get("/impersonate").secure(true)
-                                           .param("username", "testUser")
-                                           .with(user(ADMIN)))
+        mockMvc.perform(get("/impersonate").secure(true).param("username", "testUser"))
                .andExpect(redirectedUrl("/"));
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
+    public void switchUserWithInvalidNameReturnError() throws Exception {
+        mockMvc.perform(get("/impersonate").secure(true).param("username", "invalidUser"))
+               .andExpect(redirectedUrl("/switchuser"));
+    }
+
+    @Test
+    @WithMockUser
     public void switchUserWithoutAuthorizationReturnDenied() throws Exception {
-        mockMvc.perform(get("/impersonate").secure(true)
-                                           .param("username", "testUser")
-                                           .with(user(USER)))
+        mockMvc.perform(get("/impersonate").secure(true).param("username", "testUser"))
                .andExpect(status().isForbidden());
     }
 
     @Test
     public void changeLanguageReturnNoContent() throws Exception {
-        mockMvc.perform(post("/setlanguage").secure(true)
-                                            .param("lang", "en")
-                                            .with(csrf().asHeader()))
+        mockMvc.perform(post("/setlanguage").secure(true).param("lang", "en").with(csrf().asHeader()))
                .andExpect(status().isNoContent());
     }
 
     @Test
     public void changeLanguageWithInvalidLangParameterReturnBadRequest() throws Exception {
-        mockMvc.perform(post("/setlanguage").secure(true)
-                                            .param("lang", "")
-                                            .with(csrf().asHeader()))
+        mockMvc.perform(post("/setlanguage").secure(true).param("lang", "").with(csrf().asHeader()))
                .andExpect(status().isBadRequest());
     }
 
     @Test
+    @Transactional
+    public void changePasswordReturnSuccess() throws Exception {
+        ChangePasswordModel changePasswordModel = new ChangePasswordModel();
+        changePasswordModel.setOldPassword("test");
+        changePasswordModel.setNewPassword("newPassword123");
+        changePasswordModel.setConfirmNewPassword("newPassword123");
+
+        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordModel)
+                                               .with(user("testUser"))
+                                               .with(csrf().asHeader()))
+               .andExpect(status().isOk())
+               .andExpect(view().name("changepassword"))
+               .andExpect(model().attribute("success", true))
+               .andExpect(model().hasNoErrors());
+    }
+
+    @ParameterizedTest
+    @MethodSource("changePasswordTestInvalidData")
+    public void changePasswordWithInvalidDataReturnErrors(ChangePasswordModel changePasswordModel) throws Exception {
+        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordModel)
+                                               .with(user("testUser"))
+                                               .with(csrf().asHeader()))
+               .andExpect(status().isUnprocessableEntity())
+               .andExpect(view().name("changepassword"))
+               .andExpect(model().attributeDoesNotExist("success"))
+               .andExpect(model().hasErrors());
+    }
+
+    private static List<ChangePasswordModel> changePasswordTestInvalidData() {
+        List<ChangePasswordModel> testDataList = new ArrayList<>();
+
+        ChangePasswordModel newPasswordMismatch = new ChangePasswordModel("test", "newPassword123", "invalidNewPassword");
+        ChangePasswordModel invalidNewPassword = new ChangePasswordModel("test", "newPass", "newPass");
+        ChangePasswordModel invalidOldPassword = new ChangePasswordModel("invalid", "newPassword123", "newPassword123");
+
+        testDataList.add(newPasswordMismatch);
+        testDataList.add(invalidNewPassword);
+        testDataList.add(invalidOldPassword);
+
+        return testDataList;
+    }
+
+    @Test
+    @Transactional
+    public void changeEmailReturnSuccess() throws Exception {
+        ChangeEmailModel changeEmailModel = new ChangeEmailModel();
+        changeEmailModel.setPassword("test");
+        changeEmailModel.setNewEmail("testuser123@test.pl");
+        changeEmailModel.setConfirmNewEmail("testuser123@test.pl");
+
+        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailModel)
+                                            .with(user("testUser"))
+                                            .with(csrf().asHeader()))
+               .andExpect(status().isOk())
+               .andExpect(view().name("changeemail"))
+               .andExpect(model().attribute("success", true))
+               .andExpect(model().hasNoErrors());
+    }
+
+    @ParameterizedTest
+    @MethodSource("changeEmailInvalidTestData")
+    public void changeEmailWithInvalidDataReturnErrors(ChangeEmailModel changeEmailModel) throws Exception {
+        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailModel)
+                                            .with(user("testUser"))
+                                            .with(csrf().asHeader()))
+               .andExpect(status().isUnprocessableEntity())
+               .andExpect(view().name("changeemail"))
+               .andExpect(model().attributeDoesNotExist("success"))
+               .andExpect(model().hasErrors());
+    }
+
+    private static List<ChangeEmailModel> changeEmailInvalidTestData() {
+        List<ChangeEmailModel> testDataList = new ArrayList<>();
+
+        ChangeEmailModel newEmailMismatch = new ChangeEmailModel("test", "newemail@test.pl", "invalidNewEmail");
+        ChangeEmailModel invalidNewEmail = new ChangeEmailModel("test", "newEmail", "newEmail");
+        ChangeEmailModel invalidPassword = new ChangeEmailModel("invalid", "newemail@test.pl", "newemail@test.pl");
+
+        testDataList.add(newEmailMismatch);
+        testDataList.add(invalidNewEmail);
+        testDataList.add(invalidPassword);
+
+        return testDataList;
+    }
+
+    @Test
+    @Transactional
+    public void resetPasswordReturnSuccess() throws Exception {
+        ResetPasswordModel resetPasswordModel = new ResetPasswordModel();
+        resetPasswordModel.setLogin("testUser");
+        resetPasswordModel.setEmail("testuser@test.pl");
+
+        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordModel)
+                                              .with(csrf().asHeader()))
+               .andExpect(status().isOk())
+               .andExpect(view().name("resetpassword"))
+               .andExpect(model().attribute("success", true))
+               .andExpect(model().hasNoErrors());
+    }
+
+    @ParameterizedTest
+    @MethodSource("resetPasswordTestData")
+    public void resetPasswordWithInvalidDataReturnErrors(ResetPasswordModel resetPasswordModel) throws Exception {
+        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordModel)
+                                              .with(csrf().asHeader()))
+               .andExpect(status().isUnprocessableEntity())
+               .andExpect(view().name("resetpassword"))
+               .andExpect(model().attributeDoesNotExist("success"))
+               .andExpect(model().hasErrors());
+    }
+
+    private static List<ResetPasswordModel> resetPasswordTestData() {
+        List<ResetPasswordModel> testData = new ArrayList<>();
+
+        ResetPasswordModel invalidLogin = new ResetPasswordModel("invalid", "testuser@test.pl");
+        ResetPasswordModel invalidEmail = new ResetPasswordModel("test", "invalid");
+
+        testData.add(invalidLogin);
+        testData.add(invalidEmail);
+
+        return testData;
+    }
+
+    @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void getUserByIdReturnSuccess() throws Exception {
-        mockMvc.perform(get("/admin/users/100").secure(true)
-                                               .with(user(ADMIN)))
+        mockMvc.perform(get("/admin/users/100").secure(true))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.id").value(100L));
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void getUserByInvalidIdReturnNotFound() throws Exception {
-        mockMvc.perform(get("/admin/users/999").secure(true)
-                                               .with(user(ADMIN)))
+        mockMvc.perform(get("/admin/users/999").secure(true))
                .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithMockUser
     public void getUserByIdWithoutAuthorizationReturnForbidden() throws Exception {
-        mockMvc.perform(get("/admin/users/100").secure(true)
-                                               .with(user(USER)))
+        mockMvc.perform(get("/admin/users/100").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
-    @Transactional
+    @WithMockUser(roles = {"ADMIN"})
     public void addUserReturnCreated() throws Exception {
         ObjectNode userNode = mapper.createObjectNode();
         userNode.put("login", "user");
         userNode.put("email", "user@test.pl");
         userNode.put("password", "Passw0rd");
+
         mockMvc.perform(post("/admin/users").secure(true)
                                             .content(mapper.writeValueAsString(userNode))
                                             .contentType(MediaType.APPLICATION_JSON)
-                                            .with(user(ADMIN))
                                             .with(csrf().asHeader()))
                .andExpect(status().isCreated());
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void addUserWithInvalidDataReturnUnprocessableEntity() throws Exception {
         ObjectNode userNode = mapper.createObjectNode();
         userNode.put("login", "superuser");
         userNode.put("email", "user@test");
         userNode.put("password", "pass");
+
         mockMvc.perform(post("/admin/users").secure(true)
                                             .content(mapper.writeValueAsString(userNode))
                                             .contentType(MediaType.APPLICATION_JSON)
-                                            .with(user(ADMIN))
                                             .with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
                .andExpect(jsonPath("$.fieldErrors", hasSize(3)));
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     public void editUserWithInvalidIdReturnBadRequest() throws Exception {
-        String userAsString = mockMvc.perform(get("/admin/users/100").secure(true)
-                                                                     .with(user(ADMIN)))
+        String userAsJson = mockMvc.perform(get("/admin/users/100").secure(true))
                                      .andExpect(status().isOk())
                                      .andReturn().getResponse().getContentAsString();
-        User user = mapper.readValue(userAsString, User.class);
+
+        User user = mapper.readValue(userAsJson, User.class);
         user.setId(999L);
 
         mockMvc.perform(put("/admin/users/100").secure(true)
                                                .content(mapper.writeValueAsString(user))
                                                .contentType(MediaType.APPLICATION_JSON)
-                                               .with(user(ADMIN))
                                                .with(csrf().asHeader()))
                .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     @Transactional
     public void deleteUserReturnSuccess() throws Exception {
-        mockMvc.perform(delete("/admin/users/100").secure(true)
-                                                  .with(user(ADMIN))
-                                                  .with(csrf().asHeader()))
+        mockMvc.perform(delete("/admin/users/100").secure(true).with(csrf().asHeader()))
                .andExpect(status().isOk())
                .andExpect(content().string("{}"));
     }
@@ -385,11 +514,11 @@ public class BookmarketApplicationTests {
     @Transactional
     public void addOfferReturnCreated() throws Exception {
         //get book
-        String getBooksResponse = mockMvc.perform(get("/api/books").secure(true)
+        String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
                                          .andReturn().getResponse().getContentAsString();
 
-        Book book = mapper.treeToValue(mapper.readTree(getBooksResponse).get(0), Book.class);
+        Book book = mapper.treeToValue(mapper.readTree(getBooksAsJson).get(0), Book.class);
 
         //make offer
         Offer offer = new Offer();
@@ -411,18 +540,18 @@ public class BookmarketApplicationTests {
     @Test
     @Transactional
     public void deleteOfferReturnOk() throws Exception {
-        String getBooksResponse = mockMvc.perform(get("/api/books").secure(true)
+        String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
                                          .andReturn().getResponse().getContentAsString();
 
-        Book book = mapper.treeToValue(mapper.readTree(getBooksResponse).get(0), Book.class);
+        Book book = mapper.treeToValue(mapper.readTree(getBooksAsJson).get(0), Book.class);
 
         Offer offer = new Offer();
         offer.setBook(book);
         offer.setComment(new Message());
         offer.getComment().setText("Comment to the offer");
 
-        String offerAsString = mockMvc.perform(post("/api/market/offers").secure(true)
+        String offerAsJson = mockMvc.perform(post("/api/market/offers").secure(true)
                                                                          .content(mapper.writeValueAsString(offer))
                                                                          .contentType(MediaType.APPLICATION_JSON)
                                                                          .with(user("buyer"))
@@ -430,7 +559,7 @@ public class BookmarketApplicationTests {
                                       .andExpect(status().isCreated())
                                       .andReturn().getResponse().getContentAsString();
 
-        offer = mapper.readValue(offerAsString, Offer.class);
+        offer = mapper.readValue(offerAsJson, Offer.class);
 
         mockMvc.perform(delete("/api/market/offers/{id}", offer.getId()).secure(true)
                                                                         .with(user("buyer"))
@@ -442,11 +571,11 @@ public class BookmarketApplicationTests {
     @Test
     @Transactional
     public void acceptOfferReturnNoContent() throws Exception {
-        String getBooksResponse = mockMvc.perform(get("/api/books").secure(true)
+        String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
                                          .andReturn().getResponse().getContentAsString();
 
-        Book book = mapper.treeToValue(mapper.readTree(getBooksResponse).get(0), Book.class);
+        Book book = mapper.treeToValue(mapper.readTree(getBooksAsJson).get(0), Book.class);
 
         Offer offer = new Offer();
         offer.setBook(book);
@@ -454,7 +583,7 @@ public class BookmarketApplicationTests {
         offer.getComment().setText("Comment to the offer");
 
         //save offer to get its ID
-        String offerAsString = mockMvc.perform(post("/api/market/offers").secure(true)
+        String offerAsJson = mockMvc.perform(post("/api/market/offers").secure(true)
                                                                          .content(mapper.writeValueAsString(offer))
                                                                          .contentType(MediaType.APPLICATION_JSON)
                                                                          .with(user("buyer"))
@@ -462,7 +591,7 @@ public class BookmarketApplicationTests {
                                       .andExpect(status().isCreated())
                                       .andReturn().getResponse().getContentAsString();
 
-        offer = mapper.readValue(offerAsString, Offer.class);
+        offer = mapper.readValue(offerAsJson, Offer.class);
 
         mockMvc.perform(post("/api/market/offers/accept").secure(true)
                                                          .content(mapper.writeValueAsString(offer))
@@ -505,10 +634,10 @@ public class BookmarketApplicationTests {
         //check if sent message is valid
         Message sentMessage = mapper.treeToValue(mapper.readTree(unreadMessagesAsString).get(0), Message.class);
 
-        Assertions.assertEquals("This is a test message.", sentMessage.getText());
-        Assertions.assertEquals("buyer", sentMessage.getReceiver().getLogin());
-        Assertions.assertEquals("testUser", sentMessage.getSender().getLogin());
-        Assertions.assertFalse(sentMessage.isRead());
+        assertEquals("This is a test message.", sentMessage.getText());
+        assertEquals("buyer", sentMessage.getReceiver().getLogin());
+        assertEquals("testUser", sentMessage.getSender().getLogin());
+        assertFalse(sentMessage.isRead());
     }
 
     @Test
@@ -523,15 +652,13 @@ public class BookmarketApplicationTests {
 
     @Test
     public void getUserLoginsShouldNotContainCurrentUser() {
-        User currentUser = userDao.findUserByLogin("testUser");
-        List<String> loginList = userDao.getUserLogins(currentUser.getLogin());
-
-        Assertions.assertFalse(loginList.contains(currentUser.getLogin()));
+        List<String> loginList = userDao.getUserLogins("testUser");
+        assertFalse(loginList.contains("testUser"));
     }
 
     @Test
     @Transactional
-    public void setMessagesReadTestMethod() throws Exception {
+    public void setMessagesAsReadTest() throws Exception {
         //create few messages
         List<Message> messages = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
@@ -545,29 +672,24 @@ public class BookmarketApplicationTests {
         messages = (List<Message>) messageDao.saveAll(messages);
 
         //get IDs of sent messages
-        List<Long> sentMessagesIds = messages.stream().map(Message::getId).collect(Collectors.toList());
+        List<Long> sentMessagesIdsList = messages.stream().map(Message::getId).collect(Collectors.toList());
 
-        //prepare data for request
-        String requestData = sentMessagesIds.toString().replaceAll("^\\[", "").replaceAll("]$", "");
+        //remove braces from string to get IDs separated by commas
+        String sentMessagesIdsString = sentMessagesIdsList.toString().replaceAll("^\\[", "").replaceAll("]$", "");
 
         mockMvc.perform(put("/api/messages").secure(true)
-                                            .param("ids", requestData)
+                                            .param("ids", sentMessagesIdsString)
                                             .with(user("testUser"))
                                             .with(csrf().asHeader()))
                .andExpect(status().isNoContent());
 
         //get sent messages for testUser and check if all are read
-        String sentMessagesAsString = mockMvc.perform(get("/api/messages").secure(true)
-                                                                          .with(user("testUser")))
-                                             .andExpect(jsonPath("$", hasSize(3)))
-                                             .andReturn().getResponse().getContentAsString();
-
-        List<Message> sentMessagesAsList = mapper
-            .readValue(sentMessagesAsString, mapper.getTypeFactory().constructCollectionType(List.class, Message.class));
-
-        for (Message message : sentMessagesAsList) {
-            Assertions.assertTrue(message.isRead());
-        }
+        mockMvc.perform(get("/api/messages").secure(true)
+                                            .with(user("testUser")))
+               .andExpect(jsonPath("$", hasSize(3)))
+               .andExpect(jsonPath("$[0].read").value(true))
+               .andExpect(jsonPath("$[1].read").value(true))
+               .andExpect(jsonPath("$[2].read").value(true));
 
         //check if message sent to the other user is not set as read
         mockMvc.perform(get("/api/messages").secure(true)

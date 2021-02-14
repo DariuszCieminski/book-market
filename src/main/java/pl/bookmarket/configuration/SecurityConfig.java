@@ -7,9 +7,10 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import pl.bookmarket.service.UserService;
-import pl.bookmarket.util.CustomPasswordEncoder;
+import pl.bookmarket.util.CustomBCryptPasswordEncoder;
 import pl.bookmarket.validation.handlers.AccessDenied;
 import pl.bookmarket.validation.handlers.LoginFailureHandler;
 import pl.bookmarket.validation.handlers.LoginSuccessHandler;
@@ -20,16 +21,22 @@ import pl.bookmarket.validation.handlers.UnauthenticationHandler;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserService userService;
+    private final LoginSuccessHandler loginSuccessHandler;
 
     @Autowired
-    public SecurityConfig(UserService userService) {
+    public SecurityConfig(UserService userService, LoginSuccessHandler loginSuccessHandler) {
         this.userService = userService;
+        this.loginSuccessHandler = loginSuccessHandler;
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication().withUser("admin").password("{noop}admin").roles("SUPERUSER", "ADMIN", "USER");
-        auth.userDetailsService(userService).passwordEncoder(new CustomPasswordEncoder());
+        auth.inMemoryAuthentication()
+            .withUser("admin")
+            .password("$2a$10$P5zKKSAMpTfkD9gGrvno/OWPp9lOzLUNEl/nBvxdjWWV.rEqDvuMW")
+            .roles("SUPERUSER", "ADMIN", "USER");
+
+        auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
     }
 
     @Override
@@ -39,8 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/register", "/login").not().authenticated()
                 .antMatchers("/logout", "/books", "/offers", "/market", "/messages", "/api/**").authenticated()
                 .antMatchers("/admin/**", "/impersonate", "/switchuser").hasRole("ADMIN")
-                .antMatchers("/changepassword").access("isAuthenticated() and !hasRole('SUPERUSER')")
-                .antMatchers("/changeemail").access("isAuthenticated() and !hasRole('SUPERUSER')")
+                .antMatchers("/changepassword", "/changeemail").access("isAuthenticated() and !hasRole('SUPERUSER')")
                 .antMatchers("/resetpassword").access("!isAuthenticated() or hasRole('ADMIN')")
                 .antMatchers("/canceluserswitch").hasRole("PREVIOUS_ADMINISTRATOR")
                 .anyRequest().permitAll().and()
@@ -49,7 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .usernameParameter("login")
                 .passwordParameter("password")
-                .successHandler(new LoginSuccessHandler(userService))
+                .successHandler(loginSuccessHandler)
                 .failureHandler(new LoginFailureHandler()).and()
             .logout()
                 .logoutUrl("/logout")
@@ -75,5 +81,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         filter.setTargetUrl("/");
         filter.setExitUserUrl("/canceluserswitch");
         return filter;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new CustomBCryptPasswordEncoder();
     }
 }

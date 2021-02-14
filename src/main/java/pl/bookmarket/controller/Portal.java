@@ -3,11 +3,11 @@ package pl.bookmarket.controller;
 import java.util.Collections;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.validation.groups.Default;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,7 +23,6 @@ import pl.bookmarket.model.User;
 import pl.bookmarket.service.MailService;
 import pl.bookmarket.util.ChangeEmailModel;
 import pl.bookmarket.util.ChangePasswordModel;
-import pl.bookmarket.util.CustomPasswordEncoder;
 import pl.bookmarket.util.MailType;
 import pl.bookmarket.util.PasswordGenerator;
 import pl.bookmarket.util.ResetPasswordModel;
@@ -36,13 +35,16 @@ public class Portal {
     private final RoleDao roleDao;
     private final MailService mail;
     private final MessageSource messageSource;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public Portal(UserDao userDao, RoleDao roleDao, MailService mail, MessageSource messageSource) {
+    public Portal(UserDao userDao, RoleDao roleDao, MailService mail, MessageSource messageSource,
+                  PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.roleDao = roleDao;
         this.mail = mail;
         this.messageSource = messageSource;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/")
@@ -58,7 +60,7 @@ public class Portal {
 
     @PostMapping("/register")
     public String register(
-        @Validated({Default.class, ValidationGroups.CreateUser.class}) @ModelAttribute(name = "user") User user,
+        @Validated(ValidationGroups.CreateUser.class) @ModelAttribute(name = "user") User user,
         BindingResult result, Model model, HttpServletResponse response) {
 
         if (result.hasErrors()) {
@@ -67,13 +69,14 @@ public class Portal {
         }
 
         String password = PasswordGenerator.generate();
-        user.setPassword(CustomPasswordEncoder.hash(password));
+        user.setPassword(passwordEncoder.encode(password));
         user.setRoles(Collections.singleton(roleDao.findRoleByName("USER")));
-
         userDao.save(user);
+
         mail.sendMessage(user.getEmail(), MailType.ACCOUNT_CREATED, Collections.singletonMap("userPassword", password));
 
         model.addAttribute("user", user);
+        response.setStatus(HttpServletResponse.SC_CREATED);
 
         return "register-success";
     }
@@ -139,12 +142,14 @@ public class Portal {
 
     @PostMapping("/changepassword")
     public String changePassword(@Valid @ModelAttribute("pass") ChangePasswordModel password, BindingResult result,
-                                 Model model) {
+                                 Model model, HttpServletResponse response) {
         if (!result.hasErrors()) {
             User user = userDao.findUserByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
-            user.setPassword(CustomPasswordEncoder.hash(password.getNewPassword()));
+            user.setPassword(passwordEncoder.encode(password.getNewPassword()));
             userDao.save(user);
             model.addAttribute("success", true);
+        } else {
+            response.setStatus(422);
         }
 
         return "changepassword";
@@ -158,12 +163,15 @@ public class Portal {
     }
 
     @PostMapping("/changeemail")
-    public String changeEmail(@Valid @ModelAttribute("mail") ChangeEmailModel email, BindingResult result, Model model) {
+    public String changeEmail(@Valid @ModelAttribute("mail") ChangeEmailModel email, BindingResult result, Model model,
+                              HttpServletResponse response) {
         if (!result.hasErrors()) {
             User user = userDao.findUserByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
             user.setEmail(email.getNewEmail());
             userDao.save(user);
             model.addAttribute("success", true);
+        } else {
+            response.setStatus(422);
         }
 
         return "changeemail";
@@ -178,14 +186,17 @@ public class Portal {
 
     @PostMapping("/resetpassword")
     public String resetPassword(@Valid @ModelAttribute("resetPassword") ResetPasswordModel resetPassword,
-                                BindingResult result, Model model) {
+                                BindingResult result, Model model, HttpServletResponse response) {
         if (!result.hasErrors()) {
             User user = userDao.findUserByLogin(resetPassword.getLogin());
             String password = PasswordGenerator.generate();
-            user.setPassword(CustomPasswordEncoder.hash(password));
+            user.setPassword(passwordEncoder.encode(password));
             userDao.save(user);
+
             mail.sendMessage(user.getEmail(), MailType.PASSWORD_RESET, Collections.singletonMap("userPassword", password));
             model.addAttribute("success", true);
+        } else {
+            response.setStatus(422);
         }
 
         return "resetpassword";
