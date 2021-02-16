@@ -3,7 +3,6 @@ package pl.bookmarket;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -42,6 +41,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.util.StringUtils;
 import pl.bookmarket.dao.BookDao;
 import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.dao.MessageDao;
@@ -171,7 +171,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void loginToPortalWithInvalidPasswordExpectUnauthorized() throws Exception {
+    public void loginToPortalWithInvalidPasswordReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/login").secure(true)
                                       .param("login", "testUser")
                                       .param("password", "WRONG")
@@ -612,32 +612,27 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    @Transactional
+    public void getUserLoginsShouldNotContainCurrentUser() {
+        List<String> loginList = userDao.getUserLogins("testUser");
+        assertFalse(loginList.contains("testUser"));
+    }
+
+    @Test
     public void sendMessageReturnCreated() throws Exception {
         User receiver = new User();
         receiver.setLogin("buyer");
-        Message message = new Message(null, receiver, "This is a test message.");
+        Message message = new Message(null, receiver, StringUtils.repeat("z", 300));
 
         mockMvc.perform(post("/api/messages").secure(true)
                                              .content(mapper.writeValueAsString(message))
                                              .contentType(MediaType.APPLICATION_JSON)
                                              .with(user("testUser"))
                                              .with(csrf().asHeader()))
-               .andExpect(status().isCreated());
-
-        String unreadMessagesAsString = mockMvc.perform(get("/api/messages/unread").secure(true)
-                                                                                   .with(user("buyer")))
-                                               .andExpect(jsonPath("$").isArray())
-                                               .andExpect(jsonPath("$", hasSize(1)))
-                                               .andReturn().getResponse().getContentAsString();
-
-        //check if sent message is valid
-        Message sentMessage = mapper.treeToValue(mapper.readTree(unreadMessagesAsString).get(0), Message.class);
-
-        assertEquals("This is a test message.", sentMessage.getText());
-        assertEquals("buyer", sentMessage.getReceiver().getLogin());
-        assertEquals("testUser", sentMessage.getSender().getLogin());
-        assertFalse(sentMessage.isRead());
+               .andExpect(status().isCreated())
+               .andExpect(jsonPath("$.text").value(message.getText()))
+               .andExpect(jsonPath("$.sender.login").value("testUser"))
+               .andExpect(jsonPath("$.receiver.login").value(message.getReceiver().getLogin()))
+               .andExpect(jsonPath("$.read").value(false));
     }
 
     @Test
@@ -651,13 +646,20 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void getUserLoginsShouldNotContainCurrentUser() {
-        List<String> loginList = userDao.getUserLogins("testUser");
-        assertFalse(loginList.contains("testUser"));
+    public void sendTooLongMessageReturnUnprocessableEntity() throws Exception {
+        User receiver = new User();
+        receiver.setLogin("buyer");
+        Message message = new Message(null, receiver, StringUtils.repeat("a", 301));
+
+        mockMvc.perform(post("/api/messages").secure(true)
+                                             .content(mapper.writeValueAsString(message))
+                                             .contentType(MediaType.APPLICATION_JSON)
+                                             .with(user("testUser"))
+                                             .with(csrf().asHeader()))
+               .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
-    @Transactional
     public void setMessagesAsReadTest() throws Exception {
         //create few messages
         List<Message> messages = new ArrayList<>();
