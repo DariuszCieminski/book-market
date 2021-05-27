@@ -2,11 +2,11 @@ package pl.bookmarket.util;
 
 public class Views {
 
-    public static class Books {}
+    public interface Books {}
 
-    public static class Market {}
+    public interface Market {}
 
-    public static class Message {}
+    public interface Message {}
 
-    public static class Offer {}
+    public interface Offer {}
 }

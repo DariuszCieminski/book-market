@@ -3,6 +3,7 @@ package pl.bookmarket;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -53,17 +54,14 @@ import pl.bookmarket.model.Message;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.ChangeEmailModel;
-import pl.bookmarket.util.ChangePasswordModel;
-import pl.bookmarket.util.CustomBCryptPasswordEncoder;
-import pl.bookmarket.util.ResetPasswordModel;
+import pl.bookmarket.util.*;
 
 @SpringBootTest
 @TestInstance(Lifecycle.PER_CLASS)
 @ActiveProfiles("mailDisabled")
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
-public class BookMarketApplicationTests {
+class BookMarketApplicationTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -87,7 +85,7 @@ public class BookMarketApplicationTests {
     private ObjectMapper mapper;
 
     @BeforeAll
-    public void init() {
+    void init() {
         Role role = new Role();
         role.setName("USER");
         role = roleDao.save(role);
@@ -124,7 +122,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void openRegisterViewReturnOk() throws Exception {
+    void openRegisterViewReturnOk() throws Exception {
         mockMvc.perform(get("/register").secure(true))
                .andExpect(status().isOk())
                .andExpect(view().name("register"));
@@ -132,13 +130,13 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser
-    public void openLoginViewAsAuthenticatedUserReturnForbidden() throws Exception {
+    void openLoginViewAsAuthenticatedUserReturnForbidden() throws Exception {
         mockMvc.perform(get("/register").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
-    public void registerNewAccountReturnSuccess() throws Exception {
+    void registerNewAccountReturnSuccess() throws Exception {
         User newUser = new User();
         newUser.setLogin("newUser");
         newUser.setEmail("newuser@test.pl");
@@ -150,7 +148,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void registerNewAccountWithInvalidDataReturnUnprocessableEntity() throws Exception {
+    void registerNewAccountWithInvalidDataReturnUnprocessableEntity() throws Exception {
         User newUser = new User();
         newUser.setLogin("admin");
         newUser.setEmail("superuser");
@@ -162,7 +160,13 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void loginToPortalReturnSuccess() throws Exception {
+    void generatePasswordLengthShouldBeEqualTo12() {
+        String password = PasswordGenerator.generate();
+        assertEquals(12, password.length());
+    }
+
+    @Test
+    void loginToPortalReturnSuccess() throws Exception {
         mockMvc.perform(post("/login").secure(true)
                                       .param("login", "testUser")
                                       .param("password", "test")
@@ -171,7 +175,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void loginToPortalWithInvalidPasswordReturnUnauthorized() throws Exception {
+    void loginToPortalWithInvalidPasswordReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/login").secure(true)
                                       .param("login", "testUser")
                                       .param("password", "WRONG")
@@ -181,7 +185,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void openAdminViewReturnOk() throws Exception {
+    void openAdminViewReturnOk() throws Exception {
         mockMvc.perform(get("/admin").secure(true))
                .andExpect(status().isOk())
                .andExpect(view().name("admin"));
@@ -189,47 +193,47 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser
-    public void openAdminViewWithNoAuthorizationReturnDenied() throws Exception {
+    void openAdminViewWithNoAuthorizationReturnDenied() throws Exception {
         mockMvc.perform(get("/admin").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void switchUserAsAdminReturnSuccess() throws Exception {
+    void switchUserAsAdminReturnSuccess() throws Exception {
         mockMvc.perform(get("/impersonate").secure(true).param("username", "testUser"))
                .andExpect(redirectedUrl("/"));
     }
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void switchUserWithInvalidNameReturnError() throws Exception {
+    void switchUserWithInvalidNameReturnError() throws Exception {
         mockMvc.perform(get("/impersonate").secure(true).param("username", "invalidUser"))
                .andExpect(redirectedUrl("/switchuser"));
     }
 
     @Test
     @WithMockUser
-    public void switchUserWithoutAuthorizationReturnDenied() throws Exception {
+    void switchUserWithoutAuthorizationReturnDenied() throws Exception {
         mockMvc.perform(get("/impersonate").secure(true).param("username", "testUser"))
                .andExpect(status().isForbidden());
     }
 
     @Test
-    public void changeLanguageReturnNoContent() throws Exception {
+    void changeLanguageReturnNoContent() throws Exception {
         mockMvc.perform(post("/setlanguage").secure(true).param("lang", "en").with(csrf().asHeader()))
                .andExpect(status().isNoContent());
     }
 
     @Test
-    public void changeLanguageWithInvalidLangParameterReturnBadRequest() throws Exception {
+    void changeLanguageWithInvalidLangParameterReturnBadRequest() throws Exception {
         mockMvc.perform(post("/setlanguage").secure(true).param("lang", "").with(csrf().asHeader()))
                .andExpect(status().isBadRequest());
     }
 
     @Test
     @Transactional
-    public void changePasswordReturnSuccess() throws Exception {
+    void changePasswordReturnSuccess() throws Exception {
         ChangePasswordModel changePasswordModel = new ChangePasswordModel();
         changePasswordModel.setOldPassword("test");
         changePasswordModel.setNewPassword("newPassword123");
@@ -246,7 +250,7 @@ public class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("changePasswordTestInvalidData")
-    public void changePasswordWithInvalidDataReturnErrors(ChangePasswordModel changePasswordModel) throws Exception {
+    void changePasswordWithInvalidDataReturnErrors(ChangePasswordModel changePasswordModel) throws Exception {
         mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordModel)
                                                .with(user("testUser"))
                                                .with(csrf().asHeader()))
@@ -272,7 +276,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @Transactional
-    public void changeEmailReturnSuccess() throws Exception {
+    void changeEmailReturnSuccess() throws Exception {
         ChangeEmailModel changeEmailModel = new ChangeEmailModel();
         changeEmailModel.setPassword("test");
         changeEmailModel.setNewEmail("testuser123@test.pl");
@@ -289,7 +293,7 @@ public class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("changeEmailInvalidTestData")
-    public void changeEmailWithInvalidDataReturnErrors(ChangeEmailModel changeEmailModel) throws Exception {
+    void changeEmailWithInvalidDataReturnErrors(ChangeEmailModel changeEmailModel) throws Exception {
         mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailModel)
                                             .with(user("testUser"))
                                             .with(csrf().asHeader()))
@@ -315,7 +319,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @Transactional
-    public void resetPasswordReturnSuccess() throws Exception {
+    void resetPasswordReturnSuccess() throws Exception {
         ResetPasswordModel resetPasswordModel = new ResetPasswordModel();
         resetPasswordModel.setLogin("testUser");
         resetPasswordModel.setEmail("testuser@test.pl");
@@ -330,7 +334,7 @@ public class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("resetPasswordTestData")
-    public void resetPasswordWithInvalidDataReturnErrors(ResetPasswordModel resetPasswordModel) throws Exception {
+    void resetPasswordWithInvalidDataReturnErrors(ResetPasswordModel resetPasswordModel) throws Exception {
         mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordModel)
                                               .with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
@@ -353,7 +357,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void getUserByIdReturnSuccess() throws Exception {
+    void getUserByIdReturnSuccess() throws Exception {
         mockMvc.perform(get("/admin/users/100").secure(true))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.id").value(100L));
@@ -361,21 +365,21 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void getUserByInvalidIdReturnNotFound() throws Exception {
+    void getUserByInvalidIdReturnNotFound() throws Exception {
         mockMvc.perform(get("/admin/users/999").secure(true))
                .andExpect(status().isNotFound());
     }
 
     @Test
     @WithMockUser
-    public void getUserByIdWithoutAuthorizationReturnForbidden() throws Exception {
+    void getUserByIdWithoutAuthorizationReturnForbidden() throws Exception {
         mockMvc.perform(get("/admin/users/100").secure(true))
                .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void addUserReturnCreated() throws Exception {
+    void addUserReturnCreated() throws Exception {
         ObjectNode userNode = mapper.createObjectNode();
         userNode.put("login", "user");
         userNode.put("email", "user@test.pl");
@@ -390,7 +394,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void addUserWithInvalidDataReturnUnprocessableEntity() throws Exception {
+    void addUserWithInvalidDataReturnUnprocessableEntity() throws Exception {
         ObjectNode userNode = mapper.createObjectNode();
         userNode.put("login", "superuser");
         userNode.put("email", "user@test");
@@ -406,7 +410,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @WithMockUser(roles = {"ADMIN"})
-    public void editUserWithInvalidIdReturnBadRequest() throws Exception {
+    void editUserWithInvalidIdReturnBadRequest() throws Exception {
         String userAsJson = mockMvc.perform(get("/admin/users/100").secure(true))
                                      .andExpect(status().isOk())
                                      .andReturn().getResponse().getContentAsString();
@@ -424,14 +428,14 @@ public class BookMarketApplicationTests {
     @Test
     @WithMockUser(roles = {"ADMIN"})
     @Transactional
-    public void deleteUserReturnSuccess() throws Exception {
+    void deleteUserReturnSuccess() throws Exception {
         mockMvc.perform(delete("/admin/users/100").secure(true).with(csrf().asHeader()))
                .andExpect(status().isOk())
                .andExpect(content().string("{}"));
     }
 
     @Test
-    public void addBookReturnCreated() throws Exception {
+    void addBookReturnCreated() throws Exception {
         Book book = new Book();
         book.setTitle("Test book");
         book.setAuthor("Test author");
@@ -451,7 +455,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void addBookWithInvalidDataReturnUnprocessableEntity() throws Exception {
+    void addBookWithInvalidDataReturnUnprocessableEntity() throws Exception {
         Book book = new Book();
         book.setTitle("");
         book.setAuthor("");
@@ -471,7 +475,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void editBookWithNoIdReturnBadRequest() throws Exception {
+    void editBookWithNoIdReturnBadRequest() throws Exception {
         mockMvc.perform(put("/api/books/999").secure(true)
                                              .content(mapper.writeValueAsString(new Book()))
                                              .contentType(MediaType.APPLICATION_JSON)
@@ -482,7 +486,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void editBookWithInvalidIdReturnNotFound() throws Exception {
+    void editBookWithInvalidIdReturnNotFound() throws Exception {
         Book book = new Book();
         book.setId(333L);
         book.setGenre(new Genre());
@@ -502,7 +506,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void getBooksForUserReturnOk() throws Exception {
+    void getBooksForUserReturnOk() throws Exception {
         mockMvc.perform(get("/api/books").secure(true)
                                          .with(user("testUser")))
                .andExpect(status().isOk())
@@ -512,7 +516,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @Transactional
-    public void addOfferReturnCreated() throws Exception {
+    void addOfferReturnCreated() throws Exception {
         //get book
         String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
@@ -539,7 +543,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @Transactional
-    public void deleteOfferReturnOk() throws Exception {
+    void deleteOfferReturnOk() throws Exception {
         String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
                                          .andReturn().getResponse().getContentAsString();
@@ -570,7 +574,7 @@ public class BookMarketApplicationTests {
 
     @Test
     @Transactional
-    public void acceptOfferReturnNoContent() throws Exception {
+    void acceptOfferReturnNoContent() throws Exception {
         String getBooksAsJson = mockMvc.perform(get("/api/books").secure(true)
                                                                    .with(user("testUser")))
                                          .andReturn().getResponse().getContentAsString();
@@ -602,7 +606,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void acceptOfferWithoutIdReturnUnprocessableEntity() throws Exception {
+    void acceptOfferWithoutIdReturnUnprocessableEntity() throws Exception {
         mockMvc.perform(post("/api/market/offers/accept").secure(true)
                                                          .content(mapper.writeValueAsString(new Offer()))
                                                          .contentType(MediaType.APPLICATION_JSON)
@@ -612,13 +616,13 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void getUserLoginsShouldNotContainCurrentUser() {
+    void getUserLoginsShouldNotContainCurrentUser() {
         List<String> loginList = userDao.getUserLogins("testUser");
         assertFalse(loginList.contains("testUser"));
     }
 
     @Test
-    public void sendMessageReturnCreated() throws Exception {
+    void sendMessageReturnCreated() throws Exception {
         User receiver = new User();
         receiver.setLogin("buyer");
         Message message = new Message(null, receiver, StringUtils.repeat("z", 300));
@@ -636,7 +640,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void sendMessageWithInvalidReceiverReturnUnprocessableEntity() throws Exception {
+    void sendMessageWithInvalidReceiverReturnUnprocessableEntity() throws Exception {
         mockMvc.perform(post("/api/messages").secure(true)
                                              .content(mapper.writeValueAsString(new Message()))
                                              .contentType(MediaType.APPLICATION_JSON)
@@ -646,7 +650,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void sendTooLongMessageReturnUnprocessableEntity() throws Exception {
+    void sendTooLongMessageReturnUnprocessableEntity() throws Exception {
         User receiver = new User();
         receiver.setLogin("buyer");
         Message message = new Message(null, receiver, StringUtils.repeat("a", 301));
@@ -660,7 +664,7 @@ public class BookMarketApplicationTests {
     }
 
     @Test
-    public void setMessagesAsReadTest() throws Exception {
+    void setMessagesAsReadTest() throws Exception {
         //create few messages
         List<Message> messages = new ArrayList<>();
         for (int i = 0; i < 3; i++) {

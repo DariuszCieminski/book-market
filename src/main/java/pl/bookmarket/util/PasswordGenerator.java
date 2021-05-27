@@ -1,18 +1,21 @@
 package pl.bookmarket.util;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class PasswordGenerator {
 
-    private static final int passwordLength = 10;
-    private static final char[] characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static final char[] password = new char[passwordLength];
+    private static final int PASSWORD_LENGTH = 12;
+    private static final SecureRandom random = new SecureRandom();
+    private static final char[] CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+
+    private PasswordGenerator() {
+    }
 
     public static String generate() {
-        Random random = new Random();
+        char[] password = new char[PASSWORD_LENGTH];
 
-        for (int i = 0; i < passwordLength; i++) {
-            password[i] = characters[random.nextInt(characters.length)];
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            password[i] = CHARS[random.nextInt(CHARS.length)];
         }
 
         return new String(password);

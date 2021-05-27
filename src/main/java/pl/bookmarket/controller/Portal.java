@@ -1,8 +1,5 @@
 package pl.bookmarket.controller;
 
-import java.util.Collections;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -12,21 +9,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
 import pl.bookmarket.service.MailService;
-import pl.bookmarket.util.ChangeEmailModel;
-import pl.bookmarket.util.ChangePasswordModel;
-import pl.bookmarket.util.MailType;
-import pl.bookmarket.util.PasswordGenerator;
-import pl.bookmarket.util.ResetPasswordModel;
-import pl.bookmarket.validation.ValidationGroups;
+import pl.bookmarket.util.*;
+import pl.bookmarket.validation.ValidationGroups.CreateUser;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.util.Collections;
 
 @Controller
 public class Portal {
@@ -60,8 +53,8 @@ public class Portal {
 
     @PostMapping("/register")
     public String register(
-        @Validated(ValidationGroups.CreateUser.class) @ModelAttribute(name = "user") User user,
-        BindingResult result, Model model, HttpServletResponse response) {
+        @Validated(CreateUser.class) @ModelAttribute(name = "user") User user, BindingResult result, Model model,
+        HttpServletResponse response) {
 
         if (result.hasErrors()) {
             response.setStatus(422);
@@ -85,18 +78,14 @@ public class Portal {
     public String login(@ModelAttribute(name = "loginError") String loginError, Model model) {
         model.addAttribute("user", new User());
 
-        if (!loginError.equals("")) {
+        if (loginError.length() != 0) {
             String errorMessageCode = "";
 
-            switch (loginError) {
-                case "Bad credentials":
-                    errorMessageCode = "invalid.login.password";
-                    break;
-                case "User is disabled":
-                    errorMessageCode = "user.disabled";
-                    break;
+            if ("Bad credentials".equals(loginError)) {
+                errorMessageCode = "invalid.login.password";
+            } else if ("User is disabled".equals(loginError)) {
+                errorMessageCode = "user.disabled";
             }
-
             model.addAttribute("error", messageSource.getMessage(errorMessageCode, null, LocaleContextHolder.getLocale()));
         }
 
@@ -143,13 +132,13 @@ public class Portal {
     @PostMapping("/changepassword")
     public String changePassword(@Valid @ModelAttribute("pass") ChangePasswordModel password, BindingResult result,
                                  Model model, HttpServletResponse response) {
-        if (!result.hasErrors()) {
+        if (result.hasErrors()) {
+            response.setStatus(422);
+        } else {
             User user = userDao.findUserByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
             user.setPassword(passwordEncoder.encode(password.getNewPassword()));
             userDao.save(user);
             model.addAttribute("success", true);
-        } else {
-            response.setStatus(422);
         }
 
         return "changepassword";
@@ -165,13 +154,14 @@ public class Portal {
     @PostMapping("/changeemail")
     public String changeEmail(@Valid @ModelAttribute("mail") ChangeEmailModel email, BindingResult result, Model model,
                               HttpServletResponse response) {
-        if (!result.hasErrors()) {
+        if (result.hasErrors()) {
+            response.setStatus(422);
+        } else {
             User user = userDao.findUserByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
             user.setEmail(email.getNewEmail());
             userDao.save(user);
             model.addAttribute("success", true);
-        } else {
-            response.setStatus(422);
+            //wysyłać maila o zmianie adresu email, stworzyć dodatkowy MailType i html
         }
 
         return "changeemail";
@@ -187,7 +177,9 @@ public class Portal {
     @PostMapping("/resetpassword")
     public String resetPassword(@Valid @ModelAttribute("resetPassword") ResetPasswordModel resetPassword,
                                 BindingResult result, Model model, HttpServletResponse response) {
-        if (!result.hasErrors()) {
+        if (result.hasErrors()) {
+            response.setStatus(422);
+        } else {
             User user = userDao.findUserByLogin(resetPassword.getLogin());
             String password = PasswordGenerator.generate();
             user.setPassword(passwordEncoder.encode(password));
@@ -195,8 +187,6 @@ public class Portal {
 
             mail.sendMessage(user.getEmail(), MailType.PASSWORD_RESET, Collections.singletonMap("userPassword", password));
             model.addAttribute("success", true);
-        } else {
-            response.setStatus(422);
         }
 
         return "resetpassword";

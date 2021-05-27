@@ -1,26 +1,25 @@
 package pl.bookmarket.service;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.util.MailType;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 @Service
 @Profile("mailDisabled")
 public class DummyMailServiceImpl implements MailService {
 
-    private static final Logger logger = LoggerFactory.getLogger(MailService.class);
+    private static final Logger logger = LoggerFactory.getLogger(DummyMailServiceImpl.class);
 
     @Override
     public void sendMessage(String recipient, MailType mailType, Map<String, String> variables) {
-        logger.info("The {} mail was sent to recipient ({}) with variables: {}",
-                    mailType.name(),
-                    recipient,
-                    variableMapToString(variables));
+        String variablesString = variableMapToString(variables);
+        logger.info("The {} mail was sent to recipient ({}) with variables: {}", mailType, recipient, variablesString);
     }
 
     private String variableMapToString(Map<String, String> variables) {

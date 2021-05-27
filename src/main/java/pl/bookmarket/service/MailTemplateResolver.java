@@ -1,12 +1,13 @@
 package pl.bookmarket.service;
 
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import pl.bookmarket.util.MailType;
+
+import java.util.Map;
 
 @Service
 public class MailTemplateResolver {
@@ -23,14 +24,14 @@ public class MailTemplateResolver {
         context.setLocale(LocaleContextHolder.getLocale());
 
         switch (mailType) {
-            default:
-                return "";
             case ACCOUNT_CREATED:
                 context.setVariable("password", variables.getOrDefault("userPassword", "NULL"));
                 return templateEngine.process("email-accountcreated", context);
             case PASSWORD_RESET:
                 context.setVariable("password", variables.getOrDefault("userPassword", "NULL"));
                 return templateEngine.process("email-passwordreset", context);
+            default:
+                return "";
         }
     }
 }
