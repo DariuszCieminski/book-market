@@ -5,9 +5,9 @@ import javax.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.ResetPasswordModel;
+import pl.bookmarket.dto.ResetPasswordDto;
 
-public class ResetPasswordValidator implements ConstraintValidator<ResetPassword, ResetPasswordModel> {
+public class ResetPasswordValidator implements ConstraintValidator<ResetPassword, ResetPasswordDto> {
 
     private final UserDao userDao;
 
@@ -17,7 +17,7 @@ public class ResetPasswordValidator implements ConstraintValidator<ResetPassword
     }
 
     @Override
-    public boolean isValid(ResetPasswordModel value, ConstraintValidatorContext context) {
+    public boolean isValid(ResetPasswordDto value, ConstraintValidatorContext context) {
         User user = userDao.findUserByLogin(value.getLogin());
 
         if (user == null) {
