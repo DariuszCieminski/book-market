@@ -10,9 +10,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.ChangeEmailModel;
+import pl.bookmarket.dto.ChangeEmailDto;
 
-public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, ChangeEmailModel> {
+public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, ChangeEmailDto> {
 
     private final UserDao userDao;
     private final Validator validator;
@@ -26,7 +26,7 @@ public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, Ch
     }
 
     @Override
-    public boolean isValid(ChangeEmailModel value, ConstraintValidatorContext context) {
+    public boolean isValid(ChangeEmailDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = userDao.findUserByLogin(authentication.getName());
 

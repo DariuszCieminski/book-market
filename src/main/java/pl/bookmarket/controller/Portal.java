@@ -12,6 +12,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.dao.UserDao;
+import pl.bookmarket.dto.ChangeEmailDto;
+import pl.bookmarket.dto.ChangePasswordDto;
+import pl.bookmarket.dto.ResetPasswordDto;
 import pl.bookmarket.model.User;
 import pl.bookmarket.service.MailService;
 import pl.bookmarket.util.*;
@@ -124,13 +127,13 @@ public class Portal {
 
     @GetMapping("/changepassword")
     public String changePassword(Model model) {
-        model.addAttribute("pass", new ChangePasswordModel());
+        model.addAttribute("pass", new ChangePasswordDto());
 
         return "changepassword";
     }
 
     @PostMapping("/changepassword")
-    public String changePassword(@Valid @ModelAttribute("pass") ChangePasswordModel password, BindingResult result,
+    public String changePassword(@Valid @ModelAttribute("pass") ChangePasswordDto password, BindingResult result,
                                  Model model, HttpServletResponse response) {
         if (result.hasErrors()) {
             response.setStatus(422);
@@ -146,13 +149,13 @@ public class Portal {
 
     @GetMapping("/changeemail")
     public String changeEmail(Model model) {
-        model.addAttribute("mail", new ChangeEmailModel());
+        model.addAttribute("mail", new ChangeEmailDto());
 
         return "changeemail";
     }
 
     @PostMapping("/changeemail")
-    public String changeEmail(@Valid @ModelAttribute("mail") ChangeEmailModel email, BindingResult result, Model model,
+    public String changeEmail(@Valid @ModelAttribute("mail") ChangeEmailDto email, BindingResult result, Model model,
                               HttpServletResponse response) {
         if (result.hasErrors()) {
             response.setStatus(422);
@@ -160,8 +163,9 @@ public class Portal {
             User user = userDao.findUserByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
             user.setEmail(email.getNewEmail());
             userDao.save(user);
+
+            mail.sendMessage(email.getNewEmail(), MailType.EMAIL_CHANGED, Collections.singletonMap("user", user.getLogin()));
             model.addAttribute("success", true);
-            //wysyłać maila o zmianie adresu email, stworzyć dodatkowy MailType i html
         }
 
         return "changeemail";
@@ -169,13 +173,13 @@ public class Portal {
 
     @GetMapping("/resetpassword")
     public String resetPassword(Model model) {
-        model.addAttribute("resetPassword", new ResetPasswordModel());
+        model.addAttribute("resetPassword", new ResetPasswordDto());
 
         return "resetpassword";
     }
 
     @PostMapping("/resetpassword")
-    public String resetPassword(@Valid @ModelAttribute("resetPassword") ResetPasswordModel resetPassword,
+    public String resetPassword(@Valid @ModelAttribute("resetPassword") ResetPasswordDto resetPassword,
                                 BindingResult result, Model model, HttpServletResponse response) {
         if (result.hasErrors()) {
             response.setStatus(422);

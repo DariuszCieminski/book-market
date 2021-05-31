@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+          integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" rel="stylesheet">
+    <style>
+        body {
+            background-color: rgba(136, 136, 136, 0.3);
+        }
+
+        .centered-top {
+            padding-left: 30px;
+            padding-top: 90px;
+            font-size: large;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" style="font-size: large" th:text="#{app}"></a>
+        </div>
+    </div>
+</nav>
+<div class="centered-top">
+    <h2 th:text="|#{hello} ${user}!|"></h2>
+    <p style="padding-top: 20px"><span th:text="#{email.changed.complete}"></span></p>
+</div>
+</body>
+</html>

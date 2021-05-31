@@ -10,9 +10,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
-import pl.bookmarket.util.ChangePasswordModel;
+import pl.bookmarket.dto.ChangePasswordDto;
 
-public class ChangePasswordValidator implements ConstraintValidator<ChangePassword, ChangePasswordModel> {
+public class ChangePasswordValidator implements ConstraintValidator<ChangePassword, ChangePasswordDto> {
 
     private final UserDao userDAO;
     private final Validator validator;
@@ -26,7 +26,7 @@ public class ChangePasswordValidator implements ConstraintValidator<ChangePasswo
     }
 
     @Override
-    public boolean isValid(ChangePasswordModel value, ConstraintValidatorContext context) {
+    public boolean isValid(ChangePasswordDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = userDAO.findUserByLogin(authentication.getName());
 

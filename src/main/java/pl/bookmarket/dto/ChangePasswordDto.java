@@ -1,18 +1,18 @@
-package pl.bookmarket.util;
+package pl.bookmarket.dto;
 
 import pl.bookmarket.validation.constraints.ChangePassword;
 
 @ChangePassword
-public class ChangePasswordModel {
+public class ChangePasswordDto {
 
     private String oldPassword;
     private String newPassword;
     private String confirmNewPassword;
 
-    public ChangePasswordModel() {
+    public ChangePasswordDto() {
     }
 
-    public ChangePasswordModel(String oldPassword, String newPassword, String confirmNewPassword) {
+    public ChangePasswordDto(String oldPassword, String newPassword, String confirmNewPassword) {
         this.oldPassword = oldPassword;
         this.newPassword = newPassword;
         this.confirmNewPassword = confirmNewPassword;

@@ -1,18 +1,18 @@
-package pl.bookmarket.util;
+package pl.bookmarket.dto;
 
 import pl.bookmarket.validation.constraints.ChangeEmail;
 
 @ChangeEmail
-public class ChangeEmailModel {
+public class ChangeEmailDto {
 
     private String password;
     private String newEmail;
     private String confirmNewEmail;
 
-    public ChangeEmailModel() {
+    public ChangeEmailDto() {
     }
 
-    public ChangeEmailModel(String password, String newEmail, String confirmNewEmail) {
+    public ChangeEmailDto(String password, String newEmail, String confirmNewEmail) {
         this.password = password;
         this.newEmail = newEmail;
         this.confirmNewEmail = confirmNewEmail;

@@ -30,6 +30,9 @@ public class MailTemplateResolver {
             case PASSWORD_RESET:
                 context.setVariable("password", variables.getOrDefault("userPassword", "NULL"));
                 return templateEngine.process("email-passwordreset", context);
+            case EMAIL_CHANGED:
+                context.setVariable("user", variables.getOrDefault("user", "NULL"));
+                return templateEngine.process("email-changedemail", context);
             default:
                 return "";
         }

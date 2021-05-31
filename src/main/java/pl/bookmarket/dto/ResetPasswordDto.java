@@ -1,17 +1,17 @@
-package pl.bookmarket.util;
+package pl.bookmarket.dto;
 
 import pl.bookmarket.validation.constraints.ResetPassword;
 
 @ResetPassword
-public class ResetPasswordModel {
+public class ResetPasswordDto {
 
     private String login;
     private String email;
 
-    public ResetPasswordModel() {
+    public ResetPasswordDto() {
     }
 
-    public ResetPasswordModel(String login, String email) {
+    public ResetPasswordDto(String login, String email) {
         this.login = login;
         this.email = email;
     }

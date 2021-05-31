@@ -48,6 +48,9 @@ import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.dao.MessageDao;
 import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.dao.UserDao;
+import pl.bookmarket.dto.ChangeEmailDto;
+import pl.bookmarket.dto.ChangePasswordDto;
+import pl.bookmarket.dto.ResetPasswordDto;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.Genre;
 import pl.bookmarket.model.Message;
@@ -234,12 +237,12 @@ class BookMarketApplicationTests {
     @Test
     @Transactional
     void changePasswordReturnSuccess() throws Exception {
-        ChangePasswordModel changePasswordModel = new ChangePasswordModel();
-        changePasswordModel.setOldPassword("test");
-        changePasswordModel.setNewPassword("newPassword123");
-        changePasswordModel.setConfirmNewPassword("newPassword123");
+        ChangePasswordDto changePasswordDto = new ChangePasswordDto();
+        changePasswordDto.setOldPassword("test");
+        changePasswordDto.setNewPassword("newPassword123");
+        changePasswordDto.setConfirmNewPassword("newPassword123");
 
-        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordModel)
+        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordDto)
                                                .with(user("testUser"))
                                                .with(csrf().asHeader()))
                .andExpect(status().isOk())
@@ -250,8 +253,8 @@ class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("changePasswordTestInvalidData")
-    void changePasswordWithInvalidDataReturnErrors(ChangePasswordModel changePasswordModel) throws Exception {
-        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordModel)
+    void changePasswordWithInvalidDataReturnErrors(ChangePasswordDto changePasswordDto) throws Exception {
+        mockMvc.perform(post("/changepassword").secure(true).flashAttr("pass", changePasswordDto)
                                                .with(user("testUser"))
                                                .with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
@@ -260,12 +263,12 @@ class BookMarketApplicationTests {
                .andExpect(model().hasErrors());
     }
 
-    private static List<ChangePasswordModel> changePasswordTestInvalidData() {
-        List<ChangePasswordModel> testDataList = new ArrayList<>();
+    private static List<ChangePasswordDto> changePasswordTestInvalidData() {
+        List<ChangePasswordDto> testDataList = new ArrayList<>();
 
-        ChangePasswordModel newPasswordMismatch = new ChangePasswordModel("test", "newPassword123", "invalidNewPassword");
-        ChangePasswordModel invalidNewPassword = new ChangePasswordModel("test", "newPass", "newPass");
-        ChangePasswordModel invalidOldPassword = new ChangePasswordModel("invalid", "newPassword123", "newPassword123");
+        ChangePasswordDto newPasswordMismatch = new ChangePasswordDto("test", "newPassword123", "invalidNewPassword");
+        ChangePasswordDto invalidNewPassword = new ChangePasswordDto("test", "newPass", "newPass");
+        ChangePasswordDto invalidOldPassword = new ChangePasswordDto("invalid", "newPassword123", "newPassword123");
 
         testDataList.add(newPasswordMismatch);
         testDataList.add(invalidNewPassword);
@@ -277,12 +280,12 @@ class BookMarketApplicationTests {
     @Test
     @Transactional
     void changeEmailReturnSuccess() throws Exception {
-        ChangeEmailModel changeEmailModel = new ChangeEmailModel();
-        changeEmailModel.setPassword("test");
-        changeEmailModel.setNewEmail("testuser123@test.pl");
-        changeEmailModel.setConfirmNewEmail("testuser123@test.pl");
+        ChangeEmailDto changeEmailDto = new ChangeEmailDto();
+        changeEmailDto.setPassword("test");
+        changeEmailDto.setNewEmail("testuser123@test.pl");
+        changeEmailDto.setConfirmNewEmail("testuser123@test.pl");
 
-        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailModel)
+        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailDto)
                                             .with(user("testUser"))
                                             .with(csrf().asHeader()))
                .andExpect(status().isOk())
@@ -293,8 +296,8 @@ class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("changeEmailInvalidTestData")
-    void changeEmailWithInvalidDataReturnErrors(ChangeEmailModel changeEmailModel) throws Exception {
-        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailModel)
+    void changeEmailWithInvalidDataReturnErrors(ChangeEmailDto changeEmailDto) throws Exception {
+        mockMvc.perform(post("/changeemail").secure(true).flashAttr("mail", changeEmailDto)
                                             .with(user("testUser"))
                                             .with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
@@ -303,12 +306,12 @@ class BookMarketApplicationTests {
                .andExpect(model().hasErrors());
     }
 
-    private static List<ChangeEmailModel> changeEmailInvalidTestData() {
-        List<ChangeEmailModel> testDataList = new ArrayList<>();
+    private static List<ChangeEmailDto> changeEmailInvalidTestData() {
+        List<ChangeEmailDto> testDataList = new ArrayList<>();
 
-        ChangeEmailModel newEmailMismatch = new ChangeEmailModel("test", "newemail@test.pl", "invalidNewEmail");
-        ChangeEmailModel invalidNewEmail = new ChangeEmailModel("test", "newEmail", "newEmail");
-        ChangeEmailModel invalidPassword = new ChangeEmailModel("invalid", "newemail@test.pl", "newemail@test.pl");
+        ChangeEmailDto newEmailMismatch = new ChangeEmailDto("test", "newemail@test.pl", "invalidNewEmail");
+        ChangeEmailDto invalidNewEmail = new ChangeEmailDto("test", "newEmail", "newEmail");
+        ChangeEmailDto invalidPassword = new ChangeEmailDto("invalid", "newemail@test.pl", "newemail@test.pl");
 
         testDataList.add(newEmailMismatch);
         testDataList.add(invalidNewEmail);
@@ -320,11 +323,11 @@ class BookMarketApplicationTests {
     @Test
     @Transactional
     void resetPasswordReturnSuccess() throws Exception {
-        ResetPasswordModel resetPasswordModel = new ResetPasswordModel();
-        resetPasswordModel.setLogin("testUser");
-        resetPasswordModel.setEmail("testuser@test.pl");
+        ResetPasswordDto resetPasswordDto = new ResetPasswordDto();
+        resetPasswordDto.setLogin("testUser");
+        resetPasswordDto.setEmail("testuser@test.pl");
 
-        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordModel)
+        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordDto)
                                               .with(csrf().asHeader()))
                .andExpect(status().isOk())
                .andExpect(view().name("resetpassword"))
@@ -334,8 +337,8 @@ class BookMarketApplicationTests {
 
     @ParameterizedTest
     @MethodSource("resetPasswordTestData")
-    void resetPasswordWithInvalidDataReturnErrors(ResetPasswordModel resetPasswordModel) throws Exception {
-        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordModel)
+    void resetPasswordWithInvalidDataReturnErrors(ResetPasswordDto resetPasswordDto) throws Exception {
+        mockMvc.perform(post("/resetpassword").secure(true).flashAttr("resetPassword", resetPasswordDto)
                                               .with(csrf().asHeader()))
                .andExpect(status().isUnprocessableEntity())
                .andExpect(view().name("resetpassword"))
@@ -343,11 +346,11 @@ class BookMarketApplicationTests {
                .andExpect(model().hasErrors());
     }
 
-    private static List<ResetPasswordModel> resetPasswordTestData() {
-        List<ResetPasswordModel> testData = new ArrayList<>();
+    private static List<ResetPasswordDto> resetPasswordTestData() {
+        List<ResetPasswordDto> testData = new ArrayList<>();
 
-        ResetPasswordModel invalidLogin = new ResetPasswordModel("invalid", "testuser@test.pl");
-        ResetPasswordModel invalidEmail = new ResetPasswordModel("test", "invalid");
+        ResetPasswordDto invalidLogin = new ResetPasswordDto("invalid", "testuser@test.pl");
+        ResetPasswordDto invalidEmail = new ResetPasswordDto("test", "invalid");
 
         testData.add(invalidLogin);
         testData.add(invalidEmail);

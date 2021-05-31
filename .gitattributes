@@ -1,2 +1,9 @@
-src/main/resources/static/tables/* linguist-vendored=true
-src/main/resources/static/css/bootstrap* linguist-vendored=true
+src/main/resources/static/tables/* linguist-vendored
+src/main/resources/static/css/bootstrap* linguist-vendored
+src/main/resources/static/fonts/glyphicons* linguist-vendored
+src/main/resources/static/js/bootstrap* linguist-vendored
+src/main/resources/static/js/jquery* linguist-vendored
+src/main/resources/static/js/moment* linguist-vendored
+src/main/resources/static/js/selectize* linguist-vendored
+src/main/resources/static/js/sweetalert* linguist-vendored
+src/main/resources/static/js/tooltipster* linguist-vendored
