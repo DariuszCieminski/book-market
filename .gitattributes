@@ -1,4 +1,5 @@
 src/main/resources/static/tables/* linguist-vendored
+src/main/resources/static/img/* linguist-vendored
 src/main/resources/static/css/bootstrap* linguist-vendored
 src/main/resources/static/fonts/glyphicons* linguist-vendored
 src/main/resources/static/js/bootstrap* linguist-vendored
