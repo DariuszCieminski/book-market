@@ -14,7 +14,7 @@ import pl.bookmarket.util.CustomBCryptPasswordEncoder;
 import pl.bookmarket.validation.handlers.AccessDenied;
 import pl.bookmarket.validation.handlers.LoginFailureHandler;
 import pl.bookmarket.validation.handlers.LoginSuccessHandler;
-import pl.bookmarket.validation.handlers.UnauthenticationHandler;
+import pl.bookmarket.validation.handlers.AuthenticationEntryPointHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -64,7 +64,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .clearAuthentication(true).and()
             .exceptionHandling()
                 .accessDeniedHandler(new AccessDenied())
-                .authenticationEntryPoint(new UnauthenticationHandler()).and()
+                .authenticationEntryPoint(new AuthenticationEntryPointHandler()).and()
             .sessionManagement()
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
