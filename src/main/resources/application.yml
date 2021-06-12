@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:test
+    username: sa
+    password: sa
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host:
+    port:
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+
+server:
+  ssl:
+    key-store: classpath:keystore.p12
+    key-alias: tomcat
+    key-store-type: PKCS12
+    key-store-password: BookMarket
+  port: 8443
