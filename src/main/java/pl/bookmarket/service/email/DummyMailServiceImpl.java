@@ -1,4 +1,4 @@
-package pl.bookmarket.service;
+package pl.bookmarket.service.email;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

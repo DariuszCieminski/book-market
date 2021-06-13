@@ -1,7 +1,5 @@
-package pl.bookmarket.service;
+package pl.bookmarket.service.authentication;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User.UserBuilder;
@@ -10,35 +8,32 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.UserDao;
-import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.springframework.security.core.userdetails.User.builder;
+
 @Service
-public class UserService implements UserDetailsService {
+public class DatabaseUserDetailsService implements UserDetailsService {
 
     private final UserDao dao;
 
     @Autowired
-    public UserService(UserDao dao) {
+    public DatabaseUserDetailsService(UserDao dao) {
         this.dao = dao;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = dao.findUserByLogin(username);
+        User user = dao.findUserByLogin(username)
+                       .orElseThrow(() -> new UsernameNotFoundException("There is no user with login: " + username));
 
-        if (user == null) {
-            throw new UsernameNotFoundException("There is no user with login: " + username);
-        }
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        user.getRoles().forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName())));
 
-        Set<SimpleGrantedAuthority> authorities = new HashSet<>(user.getRoles().size());
-
-        for (Role role : user.getRoles()) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
-        }
-
-        UserBuilder userBuilder = org.springframework.security.core.userdetails.User.builder();
-
+        UserBuilder userBuilder = builder();
         return userBuilder.username(username)
                           .password(user.getPassword())
                           .disabled(user.isBlocked())

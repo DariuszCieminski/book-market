@@ -1,4 +1,4 @@
-package pl.bookmarket.service;
+package pl.bookmarket.service.email;
 
 import java.util.Map;
 import javax.mail.internet.InternetAddress;
