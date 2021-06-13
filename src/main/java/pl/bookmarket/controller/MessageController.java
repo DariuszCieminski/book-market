@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.bookmarket.dao.MessageDao;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.util.Views;
 import pl.bookmarket.validation.ValidationGroups;
 import pl.bookmarket.validation.exceptions.ValidationException;
@@ -28,12 +28,12 @@ import pl.bookmarket.validation.exceptions.ValidationException;
 public class MessageController {
 
     private final MessageDao messageDao;
-    private final UserDao userDao;
+    private final UserService userService;
 
     @Autowired
-    public MessageController(MessageDao messageDao, UserDao userDao) {
+    public MessageController(MessageDao messageDao, UserService userService) {
         this.messageDao = messageDao;
-        this.userDao = userDao;
+        this.userService = userService;
     }
 
     @GetMapping
@@ -55,8 +55,8 @@ public class MessageController {
     }
 
     @GetMapping("/users")
-    public List<String> getUserLogins(Authentication authentication) {
-        return userDao.getUserLogins(authentication.getName());
+    public List<String> getUserLogins() {
+        return userService.getUsersLogins();
     }
 
     @PostMapping
@@ -68,14 +68,14 @@ public class MessageController {
             throw new ValidationException(result.getFieldErrors());
         }
 
-        User receiver = userDao.findUserByLogin(message.getReceiver().getLogin());
+        User receiver = userService.getUserByLogin(message.getReceiver().getLogin());
 
         if (receiver == null || receiver.getLogin().equals(authentication.getName())) {
             throw new ValidationException("user.invalid");
         }
 
         message.setReceiver(receiver);
-        message.setSender(userDao.findUserByLogin(authentication.getName()));
+        message.setSender(userService.getUserByLogin(authentication.getName()));
         message.setRead(false);
 
         return messageDao.save(message);

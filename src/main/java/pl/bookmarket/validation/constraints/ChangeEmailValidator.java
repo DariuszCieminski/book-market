@@ -8,19 +8,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
 import pl.bookmarket.dto.ChangeEmailDto;
+import pl.bookmarket.service.crud.UserService;
 
 public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, ChangeEmailDto> {
 
-    private final UserDao userDao;
+    private final UserService userService;
     private final Validator validator;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public ChangeEmailValidator(UserDao userDao, PasswordEncoder passwordEncoder) {
-        this.userDao = userDao;
+    public ChangeEmailValidator(UserService userService, PasswordEncoder passwordEncoder) {
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.validator = Validation.buildDefaultValidatorFactory().getValidator();
     }
@@ -28,7 +28,7 @@ public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, Ch
     @Override
     public boolean isValid(ChangeEmailDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userDao.findUserByLogin(authentication.getName());
+        User user = userService.getUserByLogin(authentication.getName());
 
         if (user == null) {
             return false;
@@ -46,7 +46,7 @@ public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, Ch
             return buildConstraintViolationWithMessage(context, "{emails.dont.match}");
         }
 
-        boolean isNewEmailAlreadyExisting = userDao.findUserByEmail(value.getNewEmail()) != null;
+        boolean isNewEmailAlreadyExisting = userService.getUserByEmail(value.getNewEmail()) != null;
 
         if (isNewEmailAlreadyExisting) {
             return buildConstraintViolationWithMessage(context, "{email.occupied}");

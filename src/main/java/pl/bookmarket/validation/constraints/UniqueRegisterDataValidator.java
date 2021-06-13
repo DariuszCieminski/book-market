@@ -3,23 +3,23 @@ package pl.bookmarket.validation.constraints;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.crud.UserService;
 
 public class UniqueRegisterDataValidator implements ConstraintValidator<UniqueRegisterData, User> {
 
-    private final UserDao userDao;
+    private final UserService userService;
 
     @Autowired
-    public UniqueRegisterDataValidator(UserDao userDao) {
-        this.userDao = userDao;
+    public UniqueRegisterDataValidator(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
     public boolean isValid(User value, ConstraintValidatorContext context) {
         boolean valid = true;
 
-        User dbUser = userDao.findUserByLogin(value.getLogin());
+        User dbUser = userService.getUserByLogin(value.getLogin());
 
         if (dbUser != null) {
             context.disableDefaultConstraintViolation();
@@ -29,7 +29,7 @@ public class UniqueRegisterDataValidator implements ConstraintValidator<UniqueRe
             valid = false;
         }
 
-        dbUser = userDao.findUserByEmail(value.getEmail());
+        dbUser = userService.getUserByEmail(value.getEmail());
 
         if (dbUser != null) {
             context.disableDefaultConstraintViolation();

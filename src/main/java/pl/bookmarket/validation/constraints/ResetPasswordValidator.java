@@ -3,22 +3,22 @@ package pl.bookmarket.validation.constraints;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
 import pl.bookmarket.dto.ResetPasswordDto;
+import pl.bookmarket.service.crud.UserService;
 
 public class ResetPasswordValidator implements ConstraintValidator<ResetPassword, ResetPasswordDto> {
 
-    private final UserDao userDao;
+    private final UserService userService;
 
     @Autowired
-    public ResetPasswordValidator(UserDao userDao) {
-        this.userDao = userDao;
+    public ResetPasswordValidator(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
     public boolean isValid(ResetPasswordDto value, ConstraintValidatorContext context) {
-        User user = userDao.findUserByLogin(value.getLogin());
+        User user = userService.getUserByLogin(value.getLogin());
 
         if (user == null) {
             context.disableDefaultConstraintViolation();

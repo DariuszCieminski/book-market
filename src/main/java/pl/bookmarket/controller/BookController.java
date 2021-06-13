@@ -17,12 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.bookmarket.dao.BookDao;
-import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.dao.OfferDao;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.Genre;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.crud.GenreService;
+import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.util.Views;
 import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
@@ -33,15 +33,15 @@ import pl.bookmarket.validation.exceptions.ValidationException;
 public class BookController {
 
     private final BookDao bookDao;
-    private final UserDao userDao;
-    private final GenreDao genreDao;
+    private final UserService userService;
+    private final GenreService genreService;
     private final OfferDao offerDao;
 
     @Autowired
-    public BookController(BookDao bookDao, UserDao userDao, GenreDao genreDao, OfferDao offerDao) {
+    public BookController(BookDao bookDao, UserService userService, GenreService genreService, OfferDao offerDao) {
         this.bookDao = bookDao;
-        this.userDao = userDao;
-        this.genreDao = genreDao;
+        this.userService = userService;
+        this.genreService = genreService;
         this.offerDao = offerDao;
     }
 
@@ -52,8 +52,8 @@ public class BookController {
     }
 
     @GetMapping("/genres")
-    public Iterable<Genre> getGenreList() {
-        return genreDao.findAll();
+    public List<Genre> getGenreList() {
+        return genreService.getAllGenres();
     }
 
     @PostMapping
@@ -68,7 +68,7 @@ public class BookController {
             throw new ValidationException(result.getFieldErrors());
         }
 
-        book.setOwner(userDao.findUserByLogin(authentication.getName()));
+        book.setOwner(userService.getUserByLogin(authentication.getName()));
 
         return bookDao.save(book);
     }
@@ -86,10 +86,10 @@ public class BookController {
         }
 
         if (!bookDao.existsById(id)) {
-            throw new EntityNotFoundException(Book.class, id);
+            throw new EntityNotFoundException(Book.class);
         }
 
-        User currentUser = userDao.findUserByLogin(authentication.getName());
+        User currentUser = userService.getUserByLogin(authentication.getName());
 
         if (currentUser.getBooks().stream().noneMatch(bk -> bk.getId().equals(id))) {
             throw new CustomException(String.format("The user %s does not own this book.", authentication.getName()),
@@ -109,7 +109,7 @@ public class BookController {
     @DeleteMapping("/{id}")
     public String deleteBook(@PathVariable Long id, Authentication authentication) {
         if (!bookDao.existsById(id)) {
-            throw new EntityNotFoundException(Book.class, id);
+            throw new EntityNotFoundException(Book.class);
         }
 
         List<Book> currentUserBooks = bookDao.getBooksByOwner_Login(authentication.getName());

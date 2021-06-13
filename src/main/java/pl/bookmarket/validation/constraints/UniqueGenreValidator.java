@@ -1,10 +1,12 @@
 package pl.bookmarket.validation.constraints;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.model.Genre;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import java.util.Optional;
 
 public class UniqueGenreValidator implements ConstraintValidator<UniqueGenre, Genre> {
 
@@ -17,9 +19,9 @@ public class UniqueGenreValidator implements ConstraintValidator<UniqueGenre, Ge
 
     @Override
     public boolean isValid(Genre value, ConstraintValidatorContext context) {
-        Genre dbGenre = genreDao.findGenreByName(value.getName());
+        Optional<Genre> dbGenre = genreDao.findGenreByName(value.getName());
 
-        boolean valid = (dbGenre == null || dbGenre.getId().equals(value.getId()));
+        boolean valid = (!dbGenre.isPresent() || dbGenre.get().getId().equals(value.getId()));
 
         if (!valid) {
             context.disableDefaultConstraintViolation();

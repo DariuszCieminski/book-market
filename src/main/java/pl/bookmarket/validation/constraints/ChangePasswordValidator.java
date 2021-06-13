@@ -8,19 +8,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
 import pl.bookmarket.dto.ChangePasswordDto;
+import pl.bookmarket.service.crud.UserService;
 
 public class ChangePasswordValidator implements ConstraintValidator<ChangePassword, ChangePasswordDto> {
 
-    private final UserDao userDAO;
+    private final UserService userService;
     private final Validator validator;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public ChangePasswordValidator(UserDao userDAO, PasswordEncoder passwordEncoder) {
-        this.userDAO = userDAO;
+    public ChangePasswordValidator(UserService userService, PasswordEncoder passwordEncoder) {
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.validator = Validation.buildDefaultValidatorFactory().getValidator();
     }
@@ -28,7 +28,7 @@ public class ChangePasswordValidator implements ConstraintValidator<ChangePasswo
     @Override
     public boolean isValid(ChangePasswordDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userDAO.findUserByLogin(authentication.getName());
+        User user = userService.getUserByLogin(authentication.getName());
 
         if (user == null) {
             return false;

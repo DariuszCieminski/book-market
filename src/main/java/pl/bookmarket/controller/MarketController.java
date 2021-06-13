@@ -21,11 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.bookmarket.dao.BookDao;
 import pl.bookmarket.dao.MessageDao;
 import pl.bookmarket.dao.OfferDao;
-import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.util.Views;
 import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
@@ -35,14 +35,14 @@ import pl.bookmarket.validation.exceptions.ValidationException;
 @RequestMapping("/api/market")
 public class MarketController {
 
-    private final UserDao userDao;
+    private final UserService userService;
     private final BookDao bookDao;
     private final OfferDao offerDao;
     private final MessageDao messageDao;
 
     @Autowired
-    public MarketController(UserDao userDao, BookDao bookDao, OfferDao offerDao, MessageDao messageDao) {
-        this.userDao = userDao;
+    public MarketController(UserService userService, BookDao bookDao, OfferDao offerDao, MessageDao messageDao) {
+        this.userService = userService;
         this.bookDao = bookDao;
         this.offerDao = offerDao;
         this.messageDao = messageDao;
@@ -88,7 +88,7 @@ public class MarketController {
         Optional<Book> book = bookDao.findById(offer.getBook().getId());
 
         if (!book.isPresent()) {
-            throw new EntityNotFoundException(Book.class, offer.getId());
+            throw new EntityNotFoundException(Book.class);
         }
 
         if (!book.get().isForSale()) {
@@ -99,7 +99,7 @@ public class MarketController {
             throw new ValidationException("own.book.offer");
         }
 
-        User currentUser = userDao.findUserByLogin(authentication.getName());
+        User currentUser = userService.getUserByLogin(authentication.getName());
 
         offer.setBuyer(currentUser);
         offer.setBook(book.get());
@@ -124,7 +124,7 @@ public class MarketController {
     @DeleteMapping("/offers/{id}")
     public String deleteOffer(@PathVariable Long id, Authentication authentication) {
         if (!offerDao.existsById(id)) {
-            throw new EntityNotFoundException(Offer.class, id);
+            throw new EntityNotFoundException(Offer.class);
         }
 
         List<Offer> userOffers = offerDao.getOffersByBuyerLogin(authentication.getName());
@@ -147,7 +147,7 @@ public class MarketController {
 
         //fetch posted offer from DB
         Offer dbOffer =
-            offerDao.findById(offer.getId()).orElseThrow(() -> new EntityNotFoundException(Offer.class, offer.getId()));
+            offerDao.findById(offer.getId()).orElseThrow(() -> new EntityNotFoundException(Offer.class));
 
         //check if buyer login and book title matches
         if (!offer.getBuyer().getLogin().equals(dbOffer.getBuyer().getLogin())
@@ -156,7 +156,7 @@ public class MarketController {
         }
 
         //bookseller = current user
-        User bookSeller = userDao.findUserByLogin(authentication.getName());
+        User bookSeller = userService.getUserByLogin(authentication.getName());
 
         //check if the current user is owner of the book and if he tries to accept his own offer for book of other user
         if (!dbOffer.getBook().getOwner().getLogin().equals(bookSeller.getLogin())
