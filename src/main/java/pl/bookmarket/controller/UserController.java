@@ -38,7 +38,7 @@ public class UserController {
         if (id == null) {
             throw new CustomException("Invalid ID", HttpStatus.BAD_REQUEST);
         } else if (!id.equals(user.getId())) {
-            throw new CustomException("ID mismatched", HttpStatus.BAD_REQUEST);
+            throw new CustomException("ID mismatched", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return userService.updateUser(user);
     }
