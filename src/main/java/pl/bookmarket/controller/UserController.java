@@ -35,9 +35,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        if (id == null) {
-            throw new CustomException("Invalid ID", HttpStatus.BAD_REQUEST);
-        } else if (!id.equals(user.getId())) {
+        if (!id.equals(user.getId())) {
             throw new CustomException("ID mismatched", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return userService.updateUser(user);

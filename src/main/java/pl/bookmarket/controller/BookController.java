@@ -55,9 +55,7 @@ public class BookController {
     @PutMapping("/{id}")
     @JsonView(Views.Books.class)
     public Book editBook(@Valid @RequestBody Book book, @PathVariable Long id) {
-        if (id == null) {
-            throw new CustomException("Invalid ID", HttpStatus.BAD_REQUEST);
-        } else if (!id.equals(book.getId())) {
+        if (!id.equals(book.getId())) {
             throw new CustomException("ID mismatched", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return bookService.updateBook(book);

@@ -30,10 +30,8 @@ public class GenreController {
 
     @PutMapping("/{id}")
     public Genre updateGenre(@PathVariable Long id, @RequestBody Genre genre) {
-        if (id == null) {
-            throw new CustomException("Invalid ID", HttpStatus.BAD_REQUEST);
-        } else if (!id.equals(genre.getId())) {
-            throw new CustomException("ID mismatched", HttpStatus.BAD_REQUEST);
+        if (!id.equals(genre.getId())) {
+            throw new CustomException("ID mismatched", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return genreService.updateGenre(genre);
     }
