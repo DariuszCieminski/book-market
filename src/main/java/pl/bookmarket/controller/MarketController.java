@@ -1,23 +1,10 @@
 package pl.bookmarket.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringJoiner;
-import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import pl.bookmarket.dao.BookDao;
 import pl.bookmarket.dao.MessageDao;
 import pl.bookmarket.dao.OfferDao;
@@ -29,7 +16,13 @@ import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.util.Views;
 import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.ValidationException;
+import pl.bookmarket.validation.exceptions.EntityValidationException;
+
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.StringJoiner;
 
 @RestController
 @RequestMapping("/api/market")
@@ -67,7 +60,7 @@ public class MarketController {
 
         if (myBooks.stream().noneMatch(book -> book.getId().equals(id))) {
             throw new CustomException(String.format("The user %s does not own this book.", authentication.getName()),
-                                      HttpStatus.FORBIDDEN);
+                    HttpStatus.FORBIDDEN);
         }
 
         return offerDao.getOffersByBook_Id(id);
@@ -76,13 +69,9 @@ public class MarketController {
     @PostMapping("/offers")
     @ResponseStatus(HttpStatus.CREATED)
     @JsonView(Views.Market.class)
-    public Offer addOffer(@Valid @RequestBody Offer offer, BindingResult result, Authentication authentication) {
+    public Offer addOffer(@Valid @RequestBody Offer offer, Authentication authentication) {
         if (offer.getId() != null || offer.getBook().getId() == null) {
             throw new CustomException("Invalid ID", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        if (result.hasErrors()) {
-            throw new ValidationException(result.getFieldErrors());
         }
 
         Optional<Book> book = bookDao.findById(offer.getBook().getId());
@@ -92,11 +81,11 @@ public class MarketController {
         }
 
         if (!book.get().isForSale()) {
-            throw new ValidationException("book.not.for.sale");
+            throw new EntityValidationException("book", "book.not.for.sale");
         }
 
         if (book.get().getOwner().getLogin().equals(authentication.getName())) {
-            throw new ValidationException("own.book.offer");
+            throw new EntityValidationException("book.owner", "own.book.offer");
         }
 
         User currentUser = userService.getUserByLogin(authentication.getName());
@@ -147,7 +136,7 @@ public class MarketController {
 
         //fetch posted offer from DB
         Offer dbOffer =
-            offerDao.findById(offer.getId()).orElseThrow(() -> new EntityNotFoundException(Offer.class));
+                offerDao.findById(offer.getId()).orElseThrow(() -> new EntityNotFoundException(Offer.class));
 
         //check if buyer login and book title matches
         if (!offer.getBuyer().getLogin().equals(dbOffer.getBuyer().getLogin())
@@ -168,7 +157,7 @@ public class MarketController {
         List<Message> messagesToSend = new ArrayList<>();
 
         Message msgToBuyer = new Message(dbOffer.getBook().getOwner(), dbOffer.getBuyer(),
-                                         String.format("{book.bought}: %s", dbOffer.getBook().getTitle()));
+                String.format("{book.bought}: %s", dbOffer.getBook().getTitle()));
         messagesToSend.add(msgToBuyer);
 
         for (Offer o : dbOffer.getBook().getOffers()) {
@@ -176,7 +165,7 @@ public class MarketController {
                 continue;
             }
             Message msgToBidder = new Message(dbOffer.getBook().getOwner(), o.getBuyer(),
-                                              String.format("{book.sold}: %s", dbOffer.getBook().getTitle()));
+                    String.format("{book.sold}: %s", dbOffer.getBook().getTitle()));
             messagesToSend.add(msgToBidder);
         }
 

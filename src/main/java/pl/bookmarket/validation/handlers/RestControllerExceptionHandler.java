@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import pl.bookmarket.dto.ErrorDto;
 import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,12 @@ public class RestControllerExceptionHandler extends ResponseEntityExceptionHandl
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(EntityValidationException.class)
+    public ResponseEntity<Object> handleEntityValidationException(EntityValidationException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                             .body(Collections.singletonMap("errors", Collections.singletonList(e.getError())));
     }
 
     @ExceptionHandler(CustomException.class)
