@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.MessageDao;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.model.User;
+import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.List;
@@ -54,8 +55,17 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    public List<Message> createMultipleMessages(List<Message> messages) {
+        return (List<Message>) messageDao.saveAll(messages);
+    }
+
+    @Override
     public Message updateMessage(Message message) {
-        return createMessage(message);
+        Message msg = messageDao.findById(message.getId())
+                                .orElseThrow(() -> new EntityNotFoundException(Message.class));
+        msg.setText(message.getText());
+        msg.setRead(message.isRead());
+        return messageDao.save(msg);
     }
 
     @Override

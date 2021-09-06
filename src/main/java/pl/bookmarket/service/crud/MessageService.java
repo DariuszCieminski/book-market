@@ -13,6 +13,8 @@ public interface MessageService {
 
     Message createMessage(Message message);
 
+    List<Message> createMultipleMessages(List<Message> messages);
+
     Message updateMessage(Message message);
 
     void setMessagesRead(List<Long> messageIds);
