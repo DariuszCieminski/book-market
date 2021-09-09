@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.BookDao;
+import pl.bookmarket.dao.OfferDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
@@ -14,10 +15,12 @@ import java.util.List;
 @Service
 public class BookServiceImpl implements BookService {
     private final BookDao bookDao;
+    private final OfferDao offerDao;
     private final UserService userService;
 
-    public BookServiceImpl(BookDao bookDao, UserService userService) {
+    public BookServiceImpl(BookDao bookDao, OfferDao offerDao, UserService userService) {
         this.bookDao = bookDao;
+        this.offerDao = offerDao;
         this.userService = userService;
     }
 
@@ -57,6 +60,12 @@ public class BookServiceImpl implements BookService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!b.getOwner().getLogin().equals(authentication.getName())) {
             throw new EntityValidationException("id", "not.users.book");
+        }
+        book.setOwner(b.getOwner());
+
+        // delete all offers for book if its status was changed to "not for sale"
+        if (!book.isForSale() && b.isForSale()) {
+            offerDao.deleteAllOffersForBook(b.getId());
         }
         return bookDao.save(book);
     }

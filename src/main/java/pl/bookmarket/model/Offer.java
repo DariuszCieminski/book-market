@@ -1,6 +1,8 @@
 package pl.bookmarket.model;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import pl.bookmarket.util.Views;
+
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -10,9 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Transient;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import pl.bookmarket.util.Views;
 
 @Entity
 public class Offer {
@@ -24,8 +24,7 @@ public class Offer {
     private Long id;
 
     @Transient
-    @Valid
-    private Message comment;
+    private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @NotNull
@@ -46,11 +45,11 @@ public class Offer {
         this.id = id;
     }
 
-    public Message getComment() {
+    public String getComment() {
         return comment;
     }
 
-    public void setComment(Message comment) {
+    public void setComment(String comment) {
         this.comment = comment;
     }
 

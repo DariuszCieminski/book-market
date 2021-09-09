@@ -1,6 +1,7 @@
 package pl.bookmarket.service.crud;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.OfferDao;
@@ -31,6 +32,12 @@ public class MarketServiceImpl implements MarketService {
 
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Book book = bookService.getBookById(bookId);
+        if (!book.getOwner().getLogin().equals(authentication.getName())
+                && !authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+            throw new EntityValidationException("id", "not.users.book");
+        }
         return offerDao.getOffersByBookId(bookId);
     }
 
@@ -61,21 +68,17 @@ public class MarketServiceImpl implements MarketService {
         offer.setBuyer(currentUser);
         offer.setBook(book);
 
-        Message comment = offer.getComment();
-        comment.setSender(currentUser);
-        comment.setReceiver(book.getOwner());
-
         //send message to book owner, that you made offer for his book
         //used message codes and delimiter '|' for new line
         StringJoiner sj = new StringJoiner("|");
         sj.add(String.format("{new.offer} \"%s\"", book.getTitle()));
 
-        if (!comment.getText().isEmpty()) {
-            sj.add(String.format("{comment}: %s", comment.getText()));
+        if (!offer.getComment().isEmpty()) {
+            sj.add(String.format("{comment}: %s", offer.getComment()));
         }
 
-        comment.setText(sj.toString());
-        messageService.createMessage(comment);
+        Message message = new Message(currentUser, book.getOwner(), sj.toString());
+        messageService.createMessage(message);
 
         return offerDao.save(offer);
     }

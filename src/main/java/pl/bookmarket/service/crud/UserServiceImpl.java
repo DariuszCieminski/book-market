@@ -57,10 +57,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
-        User dbUser = userDao.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException(User.class));
+        User u = userDao.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException(User.class));
 
         if (user.getPassword() == null) {
-            user.setPassword(dbUser.getPassword());
+            user.setPassword(u.getPassword());
         } else {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }

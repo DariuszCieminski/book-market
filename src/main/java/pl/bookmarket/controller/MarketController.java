@@ -52,13 +52,14 @@ public class MarketController {
         return marketService.addOffer(offer);
     }
 
-    @PostMapping("/offers/{id}/accept")
+    @PostMapping("/offers/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void acceptOffer(@PathVariable Long id) {
         marketService.acceptOffer(id);
     }
 
     @DeleteMapping("/offers/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteOffer(@PathVariable Long id) {
         marketService.deleteOffer(id);
     }
