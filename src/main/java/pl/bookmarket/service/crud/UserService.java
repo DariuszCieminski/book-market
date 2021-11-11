@@ -13,8 +13,6 @@ public interface UserService {
 
     List<User> getAllUsers();
 
-    List<String> getUsersLogins();
-
     User createUser(User user);
 
     User updateUser(User user);

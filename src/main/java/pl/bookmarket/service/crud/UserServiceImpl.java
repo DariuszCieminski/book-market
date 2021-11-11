@@ -1,6 +1,5 @@
 package pl.bookmarket.service.crud;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.UserDao;
@@ -41,12 +40,6 @@ public class UserServiceImpl implements UserService {
         userDao.findAll().forEach(userList::add);
 
         return userList;
-    }
-
-    @Override
-    public List<String> getUsersLogins() {
-        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userDao.getUserLogins(currentUser);
     }
 
     @Override
