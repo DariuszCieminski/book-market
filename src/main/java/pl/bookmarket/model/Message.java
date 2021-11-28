@@ -1,7 +1,7 @@
 package pl.bookmarket.model;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import java.time.OffsetDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -11,12 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.lang.Nullable;
-import pl.bookmarket.util.Views;
-import pl.bookmarket.validation.ValidationGroups;
+import java.time.OffsetDateTime;
 
 @Entity
 public class Message {
@@ -24,37 +19,29 @@ public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "messageGenerator")
     @SequenceGenerator(name = "messageGenerator", sequenceName = "message_sequence", allocationSize = 1)
-    @JsonView(Views.Message.class)
     private Long id;
 
-    @Size(max = 300, message = "{message.too.long}")
-    @JsonView(Views.Message.class)
     private String text;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
-    @JsonView(Views.Message.class)
     private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @NotNull(message = "{receiver.not.set}", groups = ValidationGroups.SendMessage.class)
     @JoinColumn(name = "receiver_id", nullable = false)
-    @JsonView(Views.Message.class)
     private User receiver;
 
     @Column(name = "is_read")
-    @JsonView(Views.Message.class)
     private boolean read;
 
     @Column(name = "sent_on", nullable = false, updatable = false)
     @CreationTimestamp
-    @JsonView(Views.Message.class)
     private OffsetDateTime sendTime;
 
     public Message() {
     }
 
-    public Message(@Nullable User sender, User receiver, String message) {
+    public Message(User sender, User receiver, String message) {
         this.sender = sender;
         this.receiver = receiver;
         this.text = message;

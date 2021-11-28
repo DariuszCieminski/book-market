@@ -1,18 +1,14 @@
 package pl.bookmarket.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.SequenceGenerator;
-import javax.validation.constraints.NotBlank;
-import pl.bookmarket.validation.constraints.UniqueRole;
+import java.util.Set;
 
 @Entity
-@UniqueRole
 public class Role {
 
     @Id
@@ -20,11 +16,9 @@ public class Role {
     @SequenceGenerator(name = "roleGenerator", sequenceName = "role_sequence", allocationSize = 1)
     private Long id;
 
-    @NotBlank(message = "{role.name.not.blank}")
     private String name;
 
     @ManyToMany(mappedBy = "roles")
-    @JsonIgnoreProperties("roles")
     private Set<User> users;
 
     public Long getId() {

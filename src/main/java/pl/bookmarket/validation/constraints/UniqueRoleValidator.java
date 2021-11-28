@@ -1,12 +1,14 @@
 package pl.bookmarket.validation.constraints;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import pl.bookmarket.dao.RoleDao;
+import pl.bookmarket.dto.RoleDto;
 import pl.bookmarket.model.Role;
 
-public class UniqueRoleValidator implements ConstraintValidator<UniqueRole, Role> {
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class UniqueRoleValidator implements ConstraintValidator<UniqueRole, RoleDto> {
 
     private final RoleDao roleDAO;
 
@@ -16,14 +18,14 @@ public class UniqueRoleValidator implements ConstraintValidator<UniqueRole, Role
     }
 
     @Override
-    public boolean isValid(Role value, ConstraintValidatorContext context) {
-        Role dbRole = roleDAO.findRoleByName(value.getName());
+    public boolean isValid(RoleDto value, ConstraintValidatorContext context) {
+        Role role = roleDAO.findRoleByName(value.getName());
 
-        boolean valid = (dbRole == null || dbRole.getId().equals(value.getId()));
+        boolean valid = (role == null || role.getId().equals(value.getId()));
 
         if (!valid) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("{role.name.occupied}")
+            context.buildConstraintViolationWithTemplate("name.occupied")
                    .addPropertyNode("name")
                    .addConstraintViolation();
         }
