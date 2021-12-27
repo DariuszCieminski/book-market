@@ -1,12 +1,7 @@
 package pl.bookmarket.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.fasterxml.jackson.annotation.JsonView;
-import java.time.OffsetDateTime;
-import java.util.Set;
+import org.hibernate.annotations.CreationTimestamp;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,19 +14,11 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
-import org.hibernate.annotations.CreationTimestamp;
-import pl.bookmarket.util.Views;
-import pl.bookmarket.validation.ValidationGroups;
-import pl.bookmarket.validation.constraints.NotContain;
-import pl.bookmarket.validation.constraints.UniqueRegisterData;
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "customer")
-@UniqueRegisterData(groups = ValidationGroups.CreateUser.class)
 public class User {
 
     @Id
@@ -39,27 +26,10 @@ public class User {
     @SequenceGenerator(name = "userGenerator", sequenceName = "user_sequence", initialValue = 100, allocationSize = 1)
     private Long id;
 
-    @NotBlank(message = "{login.not.blank}")
-    @Size(min = 2, message = "{login.size.min}")
-    @Size(max = 20, message = "{login.size.max}")
-    @NotContain(message = "{login.forbidden}", values = {"admin", "superuser"})
-    @Pattern(message = "{login.invalid}", regexp =
-        "[^!@#$%^&*()=+\\-/\\[\\]{};:'`,.?|]+|[!@#$%^&*()=+\\-/\\[\\]{};:'`,.?|]+(\\w+|\\d+)\\S+")
-    @JsonView({Views.Market.class, Views.Message.class, Views.Offer.class})
     private String login;
 
-    @Email(message = "{email.invalid}", regexp = "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\""
-                                                 + "(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f"
-                                                 + "]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9]"
-                                                 + "(?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:"
-                                                 + "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}"
-                                                 + "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:"
-                                                 + "(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01"
-                                                 + "-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])")
     private String email;
 
-    @JsonProperty(access = Access.WRITE_ONLY)
-    @Pattern(message = "{password.not.match.regex}", regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")
     private String password;
 
     @Column(name = "registered_on", updatable = false)
@@ -74,23 +44,18 @@ public class User {
 
     @ManyToMany
     @JoinTable(joinColumns = {@JoinColumn(name = "user_id")}, inverseJoinColumns = {@JoinColumn(name = "role_id")})
-    @JsonIgnoreProperties("users")
     private Set<Role> roles;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.REMOVE)
-    @JsonIgnoreProperties(value = "owner", allowSetters = true)
     private Set<Book> books;
 
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.REMOVE)
-    @JsonIgnore
     private Set<Offer> offers;
 
     @OneToMany(mappedBy = "sender", cascade = CascadeType.REMOVE)
-    @JsonIgnore
     private Set<Message> sentMessages;
 
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.REMOVE)
-    @JsonIgnore
     private Set<Message> receivedMessages;
 
     public Long getId() {

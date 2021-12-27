@@ -3,11 +3,12 @@ package pl.bookmarket.service.crud;
 import pl.bookmarket.model.Genre;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GenreService {
     List<Genre> getAllGenres();
 
-    Genre getGenreByName(String name);
+    Optional<Genre> getGenreByName(String name);
 
     Genre createGenre(Genre genre);
 

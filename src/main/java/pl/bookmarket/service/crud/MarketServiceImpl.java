@@ -14,6 +14,8 @@ import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 @Service
@@ -33,7 +35,7 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Book book = bookService.getBookById(bookId);
+        Book book = bookService.getBookById(bookId).orElseThrow(() -> new EntityNotFoundException(Book.class));
         if (!book.getOwner().getLogin().equals(authentication.getName())
                 && !authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
             throw new EntityValidationException("id", "not.users.book");
@@ -47,6 +49,11 @@ public class MarketServiceImpl implements MarketService {
     }
 
     @Override
+    public Optional<Offer> getOfferById(Long id) {
+        return offerDao.findById(id);
+    }
+
+    @Override
     public Offer addOffer(Offer offer) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -54,7 +61,8 @@ public class MarketServiceImpl implements MarketService {
             throw new EntityValidationException("book", "book.invalid");
         }
 
-        Book book = bookService.getBookById(offer.getBook().getId());
+        Book book = bookService.getBookById(offer.getBook().getId())
+                               .orElseThrow(() -> new EntityNotFoundException(Book.class));
 
         if (!book.isForSale()) {
             throw new EntityValidationException("book", "book.not.for.sale");
@@ -64,11 +72,12 @@ public class MarketServiceImpl implements MarketService {
             throw new EntityValidationException("book.owner", "own.book.offer");
         }
 
-        User currentUser = userService.getUserByLogin(authentication.getName());
+        User currentUser = userService.getUserByLogin(authentication.getName())
+                                      .orElseThrow(NoSuchElementException::new);
         offer.setBuyer(currentUser);
         offer.setBook(book);
 
-        //send message to book owner, that you made offer for his book
+        //send message to book owner, that a new offer for his book has been made
         //used message codes and delimiter '|' for new line
         StringJoiner sj = new StringJoiner("|");
         sj.add(String.format("{new.offer} \"%s\"", book.getTitle()));
@@ -86,24 +95,24 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public void acceptOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
-
+        Book book = offer.getBook();
+        User buyer = offer.getBuyer();
+        User seller = book.getOwner();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (offer.getBuyer().getLogin().equals(authentication.getName())) {
-            throw new EntityValidationException("id", "accepting.own.offer");
+
+        if (!seller.getLogin().equals(authentication.getName())) {
+            throw new EntityValidationException("id", "accept.invalid.offer");
         }
 
-        User seller = userService.getUserByLogin(authentication.getName());
-        Book book = offer.getBook();
-
         List<Message> messages = new ArrayList<>();
-        messages.add(new Message(seller, offer.getBuyer(), "{book.bought}: " + book.getTitle()));
+        messages.add(new Message(seller, buyer, "{book.bought}: " + book.getTitle()));
 
         for (Offer o : book.getOffers()) {
-            if (o.equals(offer)) continue;
+            if (o.getId().equals(offer.getId())) continue;
             messages.add(new Message(seller, o.getBuyer(), "{book.sold}: " + book.getTitle()));
         }
 
-        book.setOwner(offer.getBuyer());
+        book.setOwner(buyer);
         book.setForSale(false);
         book.setPrice(null);
 

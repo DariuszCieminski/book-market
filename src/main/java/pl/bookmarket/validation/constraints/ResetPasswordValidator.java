@@ -1,11 +1,13 @@
 package pl.bookmarket.validation.constraints;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import pl.bookmarket.dto.ResetPasswordDto;
+import pl.bookmarket.model.User;
+import pl.bookmarket.service.crud.UserService;
+
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-import org.springframework.beans.factory.annotation.Autowired;
-import pl.bookmarket.model.User;
-import pl.bookmarket.dto.ResetPasswordDto;
-import pl.bookmarket.service.crud.UserService;
+import java.util.Optional;
 
 public class ResetPasswordValidator implements ConstraintValidator<ResetPassword, ResetPasswordDto> {
 
@@ -18,15 +20,15 @@ public class ResetPasswordValidator implements ConstraintValidator<ResetPassword
 
     @Override
     public boolean isValid(ResetPasswordDto value, ConstraintValidatorContext context) {
-        User user = userService.getUserByLogin(value.getLogin());
+        Optional<User> user = userService.getUserByLogin(value.getLogin());
 
-        if (user == null) {
+        if (!user.isPresent()) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate("{user.invalid}").addConstraintViolation();
             return false;
         }
 
-        if (!user.getEmail().equals(value.getEmail())) {
+        if (!user.get().getEmail().equals(value.getEmail())) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate("{email.invalid}").addConstraintViolation();
             return false;

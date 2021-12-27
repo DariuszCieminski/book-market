@@ -1,16 +1,18 @@
 package pl.bookmarket.validation.constraints;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.Validation;
-import javax.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.bookmarket.model.User;
 import pl.bookmarket.dto.ChangePasswordDto;
+import pl.bookmarket.model.User;
 import pl.bookmarket.service.crud.UserService;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import java.util.Optional;
 
 public class ChangePasswordValidator implements ConstraintValidator<ChangePassword, ChangePasswordDto> {
 
@@ -28,13 +30,13 @@ public class ChangePasswordValidator implements ConstraintValidator<ChangePasswo
     @Override
     public boolean isValid(ChangePasswordDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.getUserByLogin(authentication.getName());
+        Optional<User> user = userService.getUserByLogin(authentication.getName());
 
-        if (user == null) {
+        if (!user.isPresent()) {
             return false;
         }
 
-        if (!passwordEncoder.matches(value.getOldPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(value.getOldPassword(), user.get().getPassword())) {
             return buildConstraintViolationWithMessage(context, "{password.invalid}");
         }
 

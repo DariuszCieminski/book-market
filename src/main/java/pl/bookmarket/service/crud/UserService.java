@@ -3,13 +3,14 @@ package pl.bookmarket.service.crud;
 import pl.bookmarket.model.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
-    User getUserByLogin(String login);
+    Optional<User> getUserByLogin(String login);
 
-    User getUserByEmail(String email);
+    Optional<User> getUserByEmail(String email);
 
-    User getUserById(Long id);
+    Optional<User> getUserById(Long id);
 
     List<User> getAllUsers();
 

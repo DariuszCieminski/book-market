@@ -7,6 +7,7 @@ import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GenreServiceImpl implements GenreService {
@@ -24,8 +25,8 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
-    public Genre getGenreByName(String name) {
-        return genreDao.findGenreByName(name).orElseThrow(() -> new EntityNotFoundException(Genre.class));
+    public Optional<Genre> getGenreByName(String name) {
+        return genreDao.findGenreByName(name);
     }
 
     @Override

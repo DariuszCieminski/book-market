@@ -11,6 +11,8 @@ import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class BookServiceImpl implements BookService {
@@ -43,14 +45,14 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Book getBookById(Long id) {
-        return bookDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Book.class));
+    public Optional<Book> getBookById(Long id) {
+        return bookDao.findById(id);
     }
 
     @Override
     public Book createBook(Book book) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        book.setOwner(userService.getUserByLogin(authentication.getName()));
+        book.setOwner(userService.getUserByLogin(authentication.getName()).orElseThrow(NoSuchElementException::new));
         return bookDao.save(book);
     }
 

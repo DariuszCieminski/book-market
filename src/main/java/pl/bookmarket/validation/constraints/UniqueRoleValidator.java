@@ -7,6 +7,7 @@ import pl.bookmarket.model.Role;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import java.util.Optional;
 
 public class UniqueRoleValidator implements ConstraintValidator<UniqueRole, RoleDto> {
 
@@ -19,9 +20,9 @@ public class UniqueRoleValidator implements ConstraintValidator<UniqueRole, Role
 
     @Override
     public boolean isValid(RoleDto value, ConstraintValidatorContext context) {
-        Role role = roleDAO.findRoleByName(value.getName());
+        Optional<Role> role = roleDAO.findRoleByName(value.getName());
 
-        boolean valid = (role == null || role.getId().equals(value.getId()));
+        boolean valid = (!role.isPresent() || role.get().getId().equals(value.getId()));
 
         if (!valid) {
             context.disableDefaultConstraintViolation();

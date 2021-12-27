@@ -10,6 +10,8 @@ import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class MessageServiceImpl implements MessageService {
@@ -40,15 +42,15 @@ public class MessageServiceImpl implements MessageService {
     public Message createMessage(Message message) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        User receiver = userService.getUserByLogin(message.getReceiver().getLogin());
+        Optional<User> receiver = userService.getUserByLogin(message.getReceiver().getLogin());
 
-        if (receiver == null || receiver.getLogin().equals(authentication.getName())) {
+        if (!receiver.isPresent() || receiver.get().getLogin().equals(authentication.getName())) {
             throw new EntityValidationException("receiver", "receiver.invalid");
         }
 
-        User sender = userService.getUserByLogin(authentication.getName());
-        message.setReceiver(receiver);
-        message.setSender(sender);
+        Optional<User> sender = userService.getUserByLogin(authentication.getName());
+        message.setReceiver(receiver.get());
+        message.setSender(sender.orElseThrow(NoSuchElementException::new));
         message.setRead(false);
 
         return messageDao.save(message);

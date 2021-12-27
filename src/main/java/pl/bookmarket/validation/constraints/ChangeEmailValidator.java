@@ -1,16 +1,18 @@
 package pl.bookmarket.validation.constraints;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.Validation;
-import javax.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.bookmarket.model.User;
 import pl.bookmarket.dto.ChangeEmailDto;
+import pl.bookmarket.model.User;
 import pl.bookmarket.service.crud.UserService;
+
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import java.util.Optional;
 
 public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, ChangeEmailDto> {
 
@@ -28,13 +30,13 @@ public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, Ch
     @Override
     public boolean isValid(ChangeEmailDto value, ConstraintValidatorContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.getUserByLogin(authentication.getName());
+        Optional<User> user = userService.getUserByLogin(authentication.getName());
 
-        if (user == null) {
+        if (!user.isPresent()) {
             return false;
         }
 
-        if (!passwordEncoder.matches(value.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(value.getPassword(), user.get().getPassword())) {
             return buildConstraintViolationWithMessage(context, "{password.invalid}");
         }
 
@@ -46,7 +48,7 @@ public class ChangeEmailValidator implements ConstraintValidator<ChangeEmail, Ch
             return buildConstraintViolationWithMessage(context, "{emails.dont.match}");
         }
 
-        boolean isNewEmailAlreadyExisting = userService.getUserByEmail(value.getNewEmail()) != null;
+        boolean isNewEmailAlreadyExisting = userService.getUserByEmail(value.getNewEmail()).isPresent();
 
         if (isNewEmailAlreadyExisting) {
             return buildConstraintViolationWithMessage(context, "{email.occupied}");
