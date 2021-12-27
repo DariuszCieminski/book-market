@@ -3,10 +3,12 @@ package pl.bookmarket.dao;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 import pl.bookmarket.model.Message;
 
 import java.util.List;
 
+@Repository
 public interface MessageDao extends CrudRepository<Message, Long> {
 
     @EntityGraph(attributePaths = "sender")
