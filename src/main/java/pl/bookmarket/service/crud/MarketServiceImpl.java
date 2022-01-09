@@ -1,14 +1,14 @@
 package pl.bookmarket.service.crud;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.OfferDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.authentication.AuthenticatedUser;
+import pl.bookmarket.util.AuthUtils;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
@@ -34,18 +34,14 @@ public class MarketServiceImpl implements MarketService {
 
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Book book = bookService.getBookById(bookId).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        if (!book.getOwner().getLogin().equals(authentication.getName())
-                && !authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-            throw new EntityValidationException("id", "not.users.book");
-        }
+        verifyUserPermissions(book.getOwner());
         return offerDao.getOffersByBookId(bookId);
     }
 
     @Override
-    public List<Offer> getOffersByUserLogin(String login) {
-        return offerDao.getOffersByBuyerLogin(login);
+    public List<Offer> getOffersByUserId(Long userId) {
+        return offerDao.getOffersByBuyerId(userId);
     }
 
     @Override
@@ -55,7 +51,7 @@ public class MarketServiceImpl implements MarketService {
 
     @Override
     public Offer addOffer(Offer offer) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
 
         if (offer.getBook() == null || offer.getBook().getId() == null) {
             throw new EntityValidationException("book", "book.invalid");
@@ -68,11 +64,11 @@ public class MarketServiceImpl implements MarketService {
             throw new EntityValidationException("book", "book.not.for.sale");
         }
 
-        if (book.getOwner().getLogin().equals(authentication.getName())) {
+        if (book.getOwner().getId().equals(authenticatedUser.getId())) {
             throw new EntityValidationException("book.owner", "own.book.offer");
         }
 
-        User currentUser = userService.getUserByLogin(authentication.getName())
+        User currentUser = userService.getUserById(authenticatedUser.getId())
                                       .orElseThrow(NoSuchElementException::new);
         offer.setBuyer(currentUser);
         offer.setBook(book);
@@ -98,11 +94,8 @@ public class MarketServiceImpl implements MarketService {
         Book book = offer.getBook();
         User buyer = offer.getBuyer();
         User seller = book.getOwner();
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (!seller.getLogin().equals(authentication.getName())) {
-            throw new EntityValidationException("id", "accept.invalid.offer");
-        }
+        verifyUserPermissions(seller);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new Message(seller, buyer, "{book.bought}: " + book.getTitle()));
@@ -124,12 +117,17 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public void deleteOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!offer.getBuyer().getLogin().equals(authentication.getName())) {
-            throw new EntityValidationException("id", "not.users.offer");
-        }
+        verifyUserPermissions(offer.getBuyer());
 
         offerDao.delete(offer);
+    }
+
+    private void verifyUserPermissions(User user) {
+        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
+        boolean correctOwner = user.getId().equals(authenticatedUser.getId());
+
+        if (!correctOwner && authenticatedUser.getAuthorities().size() <= 1) {
+            throw new AccessDeniedException("The current user cannot perform this action.");
+        }
     }
 }

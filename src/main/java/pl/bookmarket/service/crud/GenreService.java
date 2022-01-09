@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface GenreService {
     List<Genre> getAllGenres();
 
-    Optional<Genre> getGenreByName(String name);
+    Optional<Genre> getGenreById(Long id);
 
     Genre createGenre(Genre genre);
 

@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface OfferDao extends CrudRepository<Offer, Long> {
 
     @EntityGraph(attributePaths = {"buyer", "book", "book.genre"})
-    List<Offer> getOffersByBuyerLogin(String login);
+    List<Offer> getOffersByBuyerId(Long id);
 
     @EntityGraph(attributePaths = {"buyer", "book"})
     List<Offer> getOffersByBookId(Long id);

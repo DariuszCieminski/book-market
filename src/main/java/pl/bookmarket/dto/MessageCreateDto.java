@@ -1,6 +1,7 @@
 package pl.bookmarket.dto;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 public class MessageCreateDto {
@@ -9,8 +10,8 @@ public class MessageCreateDto {
     @Size(max = 300, message = "message.too.long")
     private String text;
 
-    @NotBlank(message = "login.empty")
-    private String receiverLogin;
+    @NotNull(message = "receiver.invalid")
+    private UserSimpleDto receiver;
 
     public String getText() {
         return text;
@@ -20,11 +21,11 @@ public class MessageCreateDto {
         this.text = text;
     }
 
-    public String getReceiverLogin() {
-        return receiverLogin;
+    public UserSimpleDto getReceiver() {
+        return receiver;
     }
 
-    public void setReceiverLogin(String receiverLogin) {
-        this.receiverLogin = receiverLogin;
+    public void setReceiver(UserSimpleDto receiver) {
+        this.receiver = receiver;
     }
 }

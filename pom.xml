@@ -10,7 +10,7 @@
     </parent>
     <groupId>pl</groupId>
     <artifactId>bookmarket</artifactId>
-    <version>1.5-alpha2</version>
+    <version>1.5-alpha3</version>
     <name>Book Market</name>
     <description>An online platform to catalog your books and exchange them with others</description>
 

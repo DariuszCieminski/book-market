@@ -1,34 +1,36 @@
 package pl.bookmarket.service.crud;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.BookDao;
 import pl.bookmarket.dao.OfferDao;
 import pl.bookmarket.model.Book;
+import pl.bookmarket.model.User;
+import pl.bookmarket.service.authentication.AuthenticatedUser;
+import pl.bookmarket.util.AuthUtils;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
 public class BookServiceImpl implements BookService {
     private final BookDao bookDao;
     private final OfferDao offerDao;
-    private final UserService userService;
 
-    public BookServiceImpl(BookDao bookDao, OfferDao offerDao, UserService userService) {
+    public BookServiceImpl(BookDao bookDao, OfferDao offerDao) {
         this.bookDao = bookDao;
         this.offerDao = offerDao;
-        this.userService = userService;
     }
 
     @Override
-    public List<Book> getBooksByOwnerLogin(String login) {
-        return bookDao.getBooksByOwnerLogin(login);
+    public List<Book> getBooksByOwner(Long id) {
+        AuthenticatedUser currentUser = AuthUtils.getAuthenticatedUser();
+        if (!currentUser.getId().equals(id) && currentUser.getAuthorities().size() <= 1) {
+            throw new AccessDeniedException("The current user cannot perform this action.");
+        }
+        return bookDao.getBooksByOwnerId(id);
     }
 
     @Override
@@ -40,45 +42,51 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public List<Book> getBooksForSale() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return bookDao.getBooksForSale(authentication.getName());
+        AuthenticatedUser currentUser = AuthUtils.getAuthenticatedUser();
+        return bookDao.getBooksForSale(currentUser.getId());
     }
 
     @Override
     public Optional<Book> getBookById(Long id) {
-        return bookDao.findById(id);
+        Optional<Book> bookOptional = bookDao.findById(id);
+        bookOptional.ifPresent(this::verifyUserPermissions);
+        return bookOptional;
     }
 
     @Override
     public Book createBook(Book book) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        book.setOwner(userService.getUserByLogin(authentication.getName()).orElseThrow(NoSuchElementException::new));
+        User currentUser = new User();
+        currentUser.setId(AuthUtils.getAuthenticatedUser().getId());
+        book.setOwner(currentUser);
         return bookDao.save(book);
     }
 
     @Override
     public Book updateBook(Book book) {
-        Book b = bookDao.findById(book.getId()).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!b.getOwner().getLogin().equals(authentication.getName())) {
-            throw new EntityValidationException("id", "not.users.book");
-        }
-        book.setOwner(b.getOwner());
+        Book bookById = bookDao.findById(book.getId()).orElseThrow(() -> new EntityNotFoundException(Book.class));
+        verifyUserPermissions(bookById);
+        book.setOwner(bookById.getOwner());
 
         // delete all offers for book if its status was changed to "not for sale"
-        if (!book.isForSale() && b.isForSale()) {
-            offerDao.deleteAllOffersForBook(b.getId());
+        if (!book.isForSale() && bookById.isForSale()) {
+            offerDao.deleteAllOffersForBook(bookById.getId());
         }
         return bookDao.save(book);
     }
 
     @Override
     public void deleteBook(Long id) {
-        Book b = bookDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!b.getOwner().getLogin().equals(authentication.getName())) {
-            throw new EntityValidationException("id", "not.users.book");
+        Book bookById = bookDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Book.class));
+        verifyUserPermissions(bookById);
+        bookDao.delete(bookById);
+    }
+
+    private void verifyUserPermissions(Book book) {
+        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
+        boolean correctOwner = book.getOwner().getId().equals(authenticatedUser.getId());
+
+        if (!correctOwner && authenticatedUser.getAuthorities().size() <= 1) {
+            throw new AccessDeniedException("This book is owned by another user.");
         }
-        bookDao.deleteById(id);
     }
 }

@@ -5,11 +5,11 @@ import pl.bookmarket.model.Message;
 import java.util.List;
 
 public interface MessageService {
-    List<Message> getReceivedMessages(String login);
+    List<Message> getReceivedMessages(Long userId);
 
-    List<Message> getUnreadMessages(String login);
+    List<Message> getUnreadMessages(Long userId);
 
-    List<Message> getAllMessages(String login);
+    List<Message> getAllMessages(Long userId);
 
     Message createMessage(Message message);
 

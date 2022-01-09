@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface MarketService {
     List<Offer> getOffersForBook(Long bookId);
 
-    List<Offer> getOffersByUserLogin(String login);
+    List<Offer> getOffersByUserId(Long id);
 
     Optional<Offer> getOfferById(Long id);
 

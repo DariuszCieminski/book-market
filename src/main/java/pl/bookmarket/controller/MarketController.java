@@ -36,7 +36,7 @@ public class MarketController {
     @GetMapping("/offers")
     @JsonView(Views.Market.class)
     public List<Offer> getMyOffers(Authentication authentication) {
-        return marketService.getOffersByUserLogin(authentication.getName());
+        return marketService.getOffersByUserId(authentication.getName());
     }
 
     @GetMapping("/offers/book/{id}")

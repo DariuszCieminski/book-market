@@ -7,16 +7,21 @@ import org.springframework.stereotype.Repository;
 import pl.bookmarket.model.Message;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MessageDao extends CrudRepository<Message, Long> {
 
-    @EntityGraph(attributePaths = "sender")
-    List<Message> findMessagesByReadFalseAndReceiverLogin(String login);
+    @EntityGraph(attributePaths = {"sender", "receiver"})
+    List<Message> findMessagesByReceiverId(Long id);
 
-    @Query("from Message m join m.receiver r join m.sender s where r.login=?1 or s.login=?1")
-    List<Message> findAllMessagesForUser(String login);
+    @EntityGraph(attributePaths = {"sender", "receiver"})
+    List<Message> findMessagesByReadFalseAndReceiverId(Long id);
 
-    @EntityGraph(attributePaths = "sender")
-    List<Message> findMessagesByReceiverLogin(String login);
+    @Query("from Message m join m.receiver r join m.sender s where r.id=?1 or s.id=?1")
+    List<Message> findAllMessagesForUser(Long id);
+
+    @Override
+    @EntityGraph(attributePaths = {"sender", "receiver"})
+    Optional<Message> findById(Long aLong);
 }

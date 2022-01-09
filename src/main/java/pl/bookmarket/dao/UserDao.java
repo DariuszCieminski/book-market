@@ -15,29 +15,25 @@ import java.util.Optional;
 @Repository
 public interface UserDao extends CrudRepository<User, Long> {
 
-    @EntityGraph(attributePaths = {"roles", "books", "books.genre", "offers"})
+    @EntityGraph(attributePaths = "roles")
     Optional<User> findUserByLogin(String login);
 
-    @EntityGraph(attributePaths = {"roles", "books"})
+    @EntityGraph(attributePaths = "roles")
     Optional<User> findUserByEmail(String email);
 
     @Query("select login from User where login<>?1")
     List<String> getUserLogins(String login);
 
     @Override
-    @EntityGraph(attributePaths = {"roles", "books", "books.genre"})
+    @EntityGraph(attributePaths = "roles")
     Iterable<User> findAll();
 
     @Override
-    @EntityGraph(attributePaths = {"roles", "books", "books.genre"})
+    @EntityGraph(attributePaths = "roles")
     Optional<User> findById(Long aLong);
 
     @Transactional
-    @Modifying
-    @Query("update User set lastLoginTime=?2 where login=?1")
-    void updateLastLoginTime(String login, OffsetDateTime time);
-
-    @Override
-    @EntityGraph(attributePaths = {"roles", "books"})
-    void deleteById(Long aLong);
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update User set lastLoginTime=?2 where id=?1")
+    void updateLastLoginTime(Long id, OffsetDateTime time);
 }

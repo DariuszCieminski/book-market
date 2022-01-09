@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookService {
-    List<Book> getBooksByOwnerLogin(String login);
+    List<Book> getBooksByOwner(Long id);
 
     List<Book> getAllBooks();
 

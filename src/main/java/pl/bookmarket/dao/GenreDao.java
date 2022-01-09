@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface GenreDao extends CrudRepository<Genre, Long> {
 
     Optional<Genre> findGenreByName(String name);
+
+    boolean existsGenreByName(String name);
 }

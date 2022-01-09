@@ -1,10 +1,7 @@
 package pl.bookmarket.dto;
 
-import pl.bookmarket.validation.constraints.UniqueGenre;
-
 import javax.validation.constraints.NotBlank;
 
-@UniqueGenre
 public class GenreDto {
     private Long id;
 

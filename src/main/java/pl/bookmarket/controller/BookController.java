@@ -48,7 +48,7 @@ public class BookController {
     @GetMapping("/my-books")
     @JsonView(Views.Books.class)
     public List<Book> getMyBooks(Authentication authentication) {
-        return bookService.getBooksByOwnerLogin(authentication.getName());
+        return bookService.getBooksByOwner(authentication.getName());
     }
 
     @PostMapping

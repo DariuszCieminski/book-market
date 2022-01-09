@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.model.Genre;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exceptions.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,19 +26,23 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
-    public Optional<Genre> getGenreByName(String name) {
-        return genreDao.findGenreByName(name);
+    public Optional<Genre> getGenreById(Long id) {
+        return genreDao.findById(id);
     }
 
     @Override
     public Genre createGenre(Genre genre) {
+        if (genreDao.existsGenreByName(genre.getName())) {
+            throw new EntityValidationException("name", "name.occupied");
+        }
         return genreDao.save(genre);
     }
 
     @Override
     public Genre updateGenre(Genre genre) {
-        if (!genreDao.existsById(genre.getId())) {
-            throw new EntityNotFoundException(Genre.class);
+        Genre byId = genreDao.findById(genre.getId()).orElseThrow(() -> new EntityNotFoundException(Genre.class));
+        if (genreDao.existsGenreByName(genre.getName()) && !genre.getName().equals(byId.getName())) {
+            throw new EntityValidationException("name", "name.occupied");
         }
         return genreDao.save(genre);
     }
