@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.bookmarket.model.User;
 import pl.bookmarket.service.crud.UserService;
-import pl.bookmarket.validation.exceptions.CustomException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("${bm.controllers.user}")
 public class UserController {
+
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -44,9 +44,6 @@ public class UserController {
 
     @PutMapping("/{id}")
     public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        if (!id.equals(user.getId())) {
-            throw new CustomException("ID mismatched", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
         return userService.updateUser(user);
     }
 

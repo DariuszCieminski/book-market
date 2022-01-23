@@ -10,47 +10,47 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import pl.bookmarket.model.Genre;
-import pl.bookmarket.service.crud.GenreService;
+import pl.bookmarket.model.Role;
+import pl.bookmarket.service.crud.RoleService;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("${bm.controllers.genre}")
-public class GenreController {
+@RequestMapping("${bm.controllers.role}")
+public class RoleController {
 
-    private final GenreService genreService;
+    private final RoleService roleService;
 
-    public GenreController(GenreService genreService) {
-        this.genreService = genreService;
+    public RoleController(RoleService roleService) {
+        this.roleService = roleService;
     }
 
     @GetMapping
-    public List<Genre> getGenres() {
-        return genreService.getAllGenres();
+    public List<Role> getRoles() {
+        return roleService.getAllRoles();
     }
 
     @GetMapping("/{id}")
-    public Genre getGenreById(@PathVariable Long id) {
-        return genreService.getGenreById(id).orElseThrow(() -> new EntityNotFoundException(Genre.class));
+    public Role getRoleById(@PathVariable Long id) {
+        return roleService.getRoleById(id).orElseThrow(() -> new EntityNotFoundException(Role.class));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Genre createGenre(@Valid @RequestBody Genre genre) {
-        return genreService.createGenre(genre);
+    public Role createRole(@Valid @RequestBody Role role) {
+        return roleService.createRole(role);
     }
 
     @PutMapping("/{id}")
-    public Genre updateGenre(@Valid @RequestBody Genre genre, @PathVariable Long id) {
-        return genreService.updateGenre(genre);
+    public Role updateRole(@Valid @RequestBody Role role, @PathVariable Long id) {
+        return roleService.updateRole(role);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteGenre(@PathVariable Long id) {
-        genreService.deleteGenre(id);
+    public void deleteRole(@PathVariable Long id) {
+        roleService.deleteRole(id);
     }
 }

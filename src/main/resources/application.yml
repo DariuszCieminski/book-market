@@ -1,30 +1,40 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:test
-    username: sa
-    password: sa
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-  mail:
-    host:
-    port:
-    username:
-    password:
-    properties:
-      mail:
-        smtp:
-          starttls:
-            enable: true
+    datasource:
+        url: jdbc:h2:mem:test
+        username: sa
+        password: sa
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
+    mail:
+        host:
+        port:
+        username:
+        password:
+        properties:
+            mail:
+                smtp:
+                    starttls:
+                        enable: true
 
 server:
-  ssl:
-    key-store: classpath:keystore.p12
-    key-alias: tomcat
-    key-store-type: PKCS12
-    key-store-password: BookMarket
-  port: 8443
+    ssl:
+        key-store: classpath:keystore.p12
+        key-alias: tomcat
+        key-store-type: PKCS12
+        key-store-password: BookMarket
+    port: 8443
+
+bm:
+    controllers:
+        book: /api/books
+        genre: /api/genres
+        market: /api/market
+        offer: /api/offers
+        message: /api/messages
+        role: /api/roles
+        user: /api/users
