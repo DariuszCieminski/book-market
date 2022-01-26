@@ -26,10 +26,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public List<Book> getBooksByOwner(Long id) {
-        AuthenticatedUser currentUser = AuthUtils.getAuthenticatedUser();
-        if (!currentUser.getId().equals(id) && currentUser.getAuthorities().size() <= 1) {
-            throw new AccessDeniedException("The current user cannot perform this action.");
-        }
+        verifyUserPermissions(id);
         return bookDao.getBooksByOwnerId(id);
     }
 
@@ -49,7 +46,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Optional<Book> getBookById(Long id) {
         Optional<Book> bookOptional = bookDao.findById(id);
-        bookOptional.ifPresent(this::verifyUserPermissions);
+        bookOptional.ifPresent(book -> verifyUserPermissions(book.getOwner().getId()));
         return bookOptional;
     }
 
@@ -64,7 +61,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Book updateBook(Book book) {
         Book bookById = bookDao.findById(book.getId()).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        verifyUserPermissions(bookById);
+        verifyUserPermissions(bookById.getOwner().getId());
         book.setOwner(bookById.getOwner());
 
         // delete all offers for book if its status was changed to "not for sale"
@@ -77,15 +74,15 @@ public class BookServiceImpl implements BookService {
     @Override
     public void deleteBook(Long id) {
         Book bookById = bookDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        verifyUserPermissions(bookById);
+        verifyUserPermissions(bookById.getOwner().getId());
         bookDao.delete(bookById);
     }
 
-    private void verifyUserPermissions(Book book) {
+    private void verifyUserPermissions(Long userId) {
         AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
-        boolean correctOwner = book.getOwner().getId().equals(authenticatedUser.getId());
+        boolean validUser = userId.equals(authenticatedUser.getId());
 
-        if (!correctOwner && authenticatedUser.getAuthorities().size() <= 1) {
+        if (!validUser && authenticatedUser.getAuthorities().size() <= 1) {
             throw new AccessDeniedException("This book is owned by another user.");
         }
     }

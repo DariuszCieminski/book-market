@@ -35,12 +35,13 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
         Book book = bookService.getBookById(bookId).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        verifyUserPermissions(book.getOwner());
+        verifyUserPermissions(book.getOwner().getId());
         return offerDao.getOffersByBookId(bookId);
     }
 
     @Override
     public List<Offer> getOffersByUserId(Long userId) {
+        verifyUserPermissions(userId);
         return offerDao.getOffersByBuyerId(userId);
     }
 
@@ -95,7 +96,7 @@ public class MarketServiceImpl implements MarketService {
         User buyer = offer.getBuyer();
         User seller = book.getOwner();
 
-        verifyUserPermissions(seller);
+        verifyUserPermissions(seller.getId());
 
         List<Message> messages = new ArrayList<>();
         messages.add(new Message(seller, buyer, "{book.bought}: " + book.getTitle()));
@@ -117,16 +118,16 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public void deleteOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
-        verifyUserPermissions(offer.getBuyer());
+        verifyUserPermissions(offer.getBuyer().getId());
 
         offerDao.delete(offer);
     }
 
-    private void verifyUserPermissions(User user) {
+    private void verifyUserPermissions(Long userId) {
         AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
-        boolean correctOwner = user.getId().equals(authenticatedUser.getId());
+        boolean validUser = userId.equals(authenticatedUser.getId());
 
-        if (!correctOwner && authenticatedUser.getAuthorities().size() <= 1) {
+        if (!validUser && authenticatedUser.getAuthorities().size() <= 1) {
             throw new AccessDeniedException("The current user cannot perform this action.");
         }
     }

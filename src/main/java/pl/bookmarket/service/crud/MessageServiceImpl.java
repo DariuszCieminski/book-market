@@ -26,28 +26,31 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<Message> getReceivedMessages(Long userId) {
+        verifyUserPermissions(userId);
         return messageDao.findMessagesByReceiverId(userId);
     }
 
     @Override
     public List<Message> getUnreadMessages(Long userId) {
+        verifyUserPermissions(userId);
         return messageDao.findMessagesByReadFalseAndReceiverId(userId);
     }
 
     @Override
     public List<Message> getAllMessages(Long userId) {
+        verifyUserPermissions(userId);
         return messageDao.findAllMessagesForUser(userId);
     }
 
     @Override
     public Message createMessage(Message message) {
-        validateMessage(message);
+        validateAndUpdateMessage(message);
         return messageDao.save(message);
     }
 
     @Override
     public List<Message> createMultipleMessages(List<Message> messages) {
-        messages.forEach(this::validateMessage);
+        messages.forEach(this::validateAndUpdateMessage);
         return (List<Message>) messageDao.saveAll(messages);
     }
 
@@ -55,7 +58,7 @@ public class MessageServiceImpl implements MessageService {
     public Message updateMessage(Message message) {
         Message msg = messageDao.findById(message.getId())
                                 .orElseThrow(() -> new EntityNotFoundException(Message.class));
-        verifyUserPermissions(message.getReceiver());
+        verifyUserPermissions(message.getReceiver().getId());
         msg.setText(message.getText());
         msg.setRead(message.isRead());
         return messageDao.save(msg);
@@ -77,18 +80,20 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public void deleteMessage(Long id) {
         Message message = messageDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Message.class));
-        verifyUserPermissions(message.getReceiver());
+        verifyUserPermissions(message.getReceiver().getId());
         messageDao.delete(message);
     }
 
-    private void verifyUserPermissions(User user) {
-        AuthenticatedUser currentUser = AuthUtils.getAuthenticatedUser();
-        if (!user.getId().equals(currentUser.getId()) && currentUser.getAuthorities().size() <= 1) {
+    private void verifyUserPermissions(Long userId) {
+        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
+        boolean validUser = userId.equals(authenticatedUser.getId());
+
+        if (!validUser && authenticatedUser.getAuthorities().size() <= 1) {
             throw new AccessDeniedException("The current user cannot perform this action.");
         }
     }
 
-    private void validateMessage(Message message) {
+    private void validateAndUpdateMessage(Message message) {
         AuthenticatedUser currentUser = AuthUtils.getAuthenticatedUser();
         Optional<User> receiver = userService.getUserById(message.getReceiver().getId());
 
@@ -96,9 +101,10 @@ public class MessageServiceImpl implements MessageService {
             throw new EntityValidationException("receiver", "receiver.invalid");
         }
 
-        boolean isSenderInvalid = message.getSender() == null || message.getSender().getId() == null;
+        boolean senderInvalid = message.getSender() == null || message.getSender().getId() == null;
 
-        if (isSenderInvalid || currentUser.getAuthorities().size() <= 1) {
+        // set sender to current user if it's invalid or set by ineligible user
+        if (senderInvalid || currentUser.getAuthorities().size() <= 1) {
             User sender = userService.getUserById(currentUser.getId()).orElseThrow(NoSuchElementException::new);
             message.setSender(sender);
         }
