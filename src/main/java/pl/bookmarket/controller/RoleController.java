@@ -10,42 +10,51 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import pl.bookmarket.dto.RoleDto;
+import pl.bookmarket.mapper.RoleMapper;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.service.crud.RoleService;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${bm.controllers.role}")
 public class RoleController {
 
     private final RoleService roleService;
+    private final RoleMapper roleMapper;
 
-    public RoleController(RoleService roleService) {
+    public RoleController(RoleService roleService, RoleMapper roleMapper) {
         this.roleService = roleService;
+        this.roleMapper = roleMapper;
     }
 
     @GetMapping
-    public List<Role> getRoles() {
-        return roleService.getAllRoles();
+    public List<RoleDto> getRoles() {
+        return roleService.getAllRoles().stream().map(roleMapper::roleToDto).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Role getRoleById(@PathVariable Long id) {
-        return roleService.getRoleById(id).orElseThrow(() -> new EntityNotFoundException(Role.class));
+    public RoleDto getRoleById(@PathVariable Long id) {
+        Role role = roleService.getRoleById(id).orElseThrow(() -> new EntityNotFoundException(Role.class));
+        return roleMapper.roleToDto(role);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Role createRole(@Valid @RequestBody Role role) {
-        return roleService.createRole(role);
+    public RoleDto createRole(@Valid @RequestBody RoleDto role) {
+        Role created = roleService.createRole(roleMapper.dtoToRole(role));
+        return roleMapper.roleToDto(created);
     }
 
     @PutMapping("/{id}")
-    public Role updateRole(@Valid @RequestBody Role role, @PathVariable Long id) {
-        return roleService.updateRole(role);
+    public RoleDto updateRole(@Valid @RequestBody RoleDto role, @PathVariable Long id) {
+        Role toBeUpdated = roleMapper.dtoToRole(role);
+        toBeUpdated.setId(id);
+        return roleMapper.roleToDto(roleService.updateRole(toBeUpdated));
     }
 
     @DeleteMapping("/{id}")

@@ -10,12 +10,13 @@
     </parent>
     <groupId>pl</groupId>
     <artifactId>bookmarket</artifactId>
-    <version>1.5-alpha3</version>
+    <version>1.5-alpha4</version>
     <name>Book Market</name>
     <description>An online platform to catalog your books and exchange them with others</description>
 
     <properties>
         <java.version>1.8</java.version>
+        <org.mapstruct.version>1.5.0.Beta2</org.mapstruct.version>
     </properties>
 
     <dependencies>
@@ -58,6 +59,11 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.11.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${org.mapstruct.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.h2database</groupId>
@@ -81,6 +87,30 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>
+                            -Amapstruct.defaultComponentModel=spring
+                        </arg>
+                        <arg>
+                            -Amapstruct.defaultInjectionStrategy=constructor
+                        </arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

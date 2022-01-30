@@ -12,37 +12,46 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import pl.bookmarket.dto.MessageCreateDto;
+import pl.bookmarket.dto.MessageDto;
+import pl.bookmarket.mapper.MessageMapper;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.service.crud.MessageService;
 
 import javax.validation.Valid;
 import java.beans.PropertyEditorSupport;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class MessageController {
 
     private final MessageService messageService;
+    private final MessageMapper messageMapper;
 
-    public MessageController(MessageService messageService) {
+    public MessageController(MessageService messageService, MessageMapper messageMapper) {
         this.messageService = messageService;
+        this.messageMapper = messageMapper;
     }
 
     @GetMapping("${bm.controllers.user}/{id}/messages")
-    public List<Message> getMessages(@RequestParam(defaultValue = "all") MessageFilter filter, @PathVariable Long id) {
+    public List<MessageDto> getMessages(@RequestParam(defaultValue = "all") MessageFilter filter, @PathVariable Long id) {
+        List<Message> messageList;
         if (filter == MessageFilter.UNREAD) {
-            return messageService.getUnreadMessages(id);
+            messageList = messageService.getUnreadMessages(id);
         } else if (filter == MessageFilter.RECEIVED) {
-            return messageService.getReceivedMessages(id);
+            messageList = messageService.getReceivedMessages(id);
         } else {
-            return messageService.getAllMessages(id);
+            messageList = messageService.getAllMessages(id);
         }
+        return messageList.stream().map(messageMapper::messageToMessageDto).collect(Collectors.toList());
     }
 
     @PostMapping("${bm.controllers.message}")
     @ResponseStatus(HttpStatus.CREATED)
-    public Message sendMessage(@Valid @RequestBody Message message) {
-        return messageService.createMessage(message);
+    public MessageDto sendMessage(@Valid @RequestBody MessageCreateDto message) {
+        Message created = messageService.createMessage(messageMapper.messageCreateDtoToMessage(message));
+        return messageMapper.messageToMessageDto(created);
     }
 
     @PutMapping("${bm.controllers.message}")
@@ -52,8 +61,10 @@ public class MessageController {
     }
 
     @PutMapping("${bm.controllers.message}/{id}")
-    public Message updateMessage(@Valid @RequestBody Message message, @PathVariable Long id) {
-        return messageService.updateMessage(message);
+    public MessageDto updateMessage(@Valid @RequestBody MessageDto message, @PathVariable Long id) {
+        Message toBeUpdated = messageMapper.messageDtoToMessage(message);
+        toBeUpdated.setId(id);
+        return messageMapper.messageToMessageDto(messageService.updateMessage(toBeUpdated));
     }
 
     @DeleteMapping("${bm.controllers.message}/{id}")

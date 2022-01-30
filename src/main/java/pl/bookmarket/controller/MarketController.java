@@ -8,44 +8,57 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import pl.bookmarket.model.Book;
+import pl.bookmarket.dto.BookDto;
+import pl.bookmarket.dto.OfferCreateDto;
+import pl.bookmarket.dto.OfferDto;
+import pl.bookmarket.mapper.BookMapper;
+import pl.bookmarket.mapper.OfferMapper;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.service.crud.BookService;
 import pl.bookmarket.service.crud.MarketService;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class MarketController {
 
     private final MarketService marketService;
     private final BookService bookService;
+    private final OfferMapper offerMapper;
+    private final BookMapper bookMapper;
 
-    public MarketController(MarketService marketService, BookService bookService) {
+    public MarketController(MarketService marketService, BookService bookService, OfferMapper offerMapper, BookMapper bookMapper) {
         this.marketService = marketService;
         this.bookService = bookService;
+        this.offerMapper = offerMapper;
+        this.bookMapper = bookMapper;
     }
 
     @GetMapping("${bm.controllers.market}")
-    public List<Book> getBooksForSale() {
-        return bookService.getBooksForSale();
+    public List<BookDto> getBooksForSale() {
+        return bookService.getBooksForSale().stream().map(bookMapper::bookToBookDto)
+                          .collect(Collectors.toList());
     }
 
     @GetMapping("${bm.controllers.user}/{id}/offers")
-    public List<Offer> getOffersForUser(@PathVariable Long id) {
-        return marketService.getOffersByUserId(id);
+    public List<OfferDto> getOffersForUser(@PathVariable Long id) {
+        return marketService.getOffersByUserId(id).stream().map(offerMapper::offerToOfferDto)
+                            .collect(Collectors.toList());
     }
 
     @GetMapping("${bm.controllers.book}/{id}/offers")
-    public List<Offer> getOffersForBook(@PathVariable Long id) {
-        return marketService.getOffersForBook(id);
+    public List<OfferDto> getOffersForBook(@PathVariable Long id) {
+        return marketService.getOffersForBook(id).stream().map(offerMapper::offerToOfferDto)
+                            .collect(Collectors.toList());
     }
 
     @PostMapping("${bm.controllers.offer}")
     @ResponseStatus(HttpStatus.CREATED)
-    public Offer addOffer(@Valid @RequestBody Offer offer) {
-        return marketService.addOffer(offer);
+    public OfferDto addOffer(@Valid @RequestBody OfferCreateDto offer) {
+        Offer created = marketService.addOffer(offerMapper.offerCreateDtoToOffer(offer));
+        return offerMapper.offerToOfferDto(created);
     }
 
     @PostMapping("${bm.controllers.offer}/{id}")
