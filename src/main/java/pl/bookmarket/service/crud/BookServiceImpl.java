@@ -6,7 +6,7 @@ import pl.bookmarket.dao.BookDao;
 import pl.bookmarket.dao.OfferDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.User;
-import pl.bookmarket.service.authentication.AuthenticatedUser;
+import pl.bookmarket.security.authentication.AuthenticatedUser;
 import pl.bookmarket.util.AuthUtils;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 

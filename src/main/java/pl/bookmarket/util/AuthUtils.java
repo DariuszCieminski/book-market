@@ -2,7 +2,7 @@ package pl.bookmarket.util;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import pl.bookmarket.service.authentication.AuthenticatedUser;
+import pl.bookmarket.security.authentication.AuthenticatedUser;
 
 public final class AuthUtils {
 

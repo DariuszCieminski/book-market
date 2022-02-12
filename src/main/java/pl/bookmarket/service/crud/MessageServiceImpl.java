@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.MessageDao;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.model.User;
-import pl.bookmarket.service.authentication.AuthenticatedUser;
+import pl.bookmarket.security.authentication.AuthenticatedUser;
 import pl.bookmarket.util.AuthUtils;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;

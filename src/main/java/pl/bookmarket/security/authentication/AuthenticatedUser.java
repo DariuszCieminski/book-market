@@ -1,4 +1,4 @@
-package pl.bookmarket.service.authentication;
+package pl.bookmarket.security.authentication;
 
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;

@@ -1,4 +1,4 @@
-package pl.bookmarket.validation.handlers;
+package pl.bookmarket.security.handlers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
