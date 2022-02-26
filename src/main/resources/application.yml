@@ -42,3 +42,6 @@ bm:
         user: /api/users
     login-url: /api/login
     cors-origins: "*"
+    jwt:
+        access-token-duration: 10
+        refresh-token-duration: 360

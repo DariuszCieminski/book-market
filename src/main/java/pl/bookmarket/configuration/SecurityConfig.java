@@ -19,7 +19,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pl.bookmarket.dao.UserDao;
+import pl.bookmarket.security.authentication.JwtService;
 import pl.bookmarket.security.filters.AuthenticationFilter;
+import pl.bookmarket.security.filters.AuthorizationFilter;
 import pl.bookmarket.security.handlers.AuthenticationEntryPointHandler;
 import pl.bookmarket.security.handlers.CustomAccessDeniedHandler;
 import pl.bookmarket.security.handlers.LoginFailureHandler;
@@ -41,17 +43,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthenticationProvider authenticationProvider;
     private final UserDao userDao;
-    private AuthenticationFilter authenticationFilter;
+    private final JwtService jwtService;
 
-    public SecurityConfig(AuthenticationProvider authenticationProvider, UserDao userDao) {
+    private AuthenticationFilter authenticationFilter;
+    private AuthorizationFilter authorizationFilter;
+
+    public SecurityConfig(AuthenticationProvider authenticationProvider, UserDao userDao, JwtService jwtService) {
         this.authenticationProvider = authenticationProvider;
         this.userDao = userDao;
+        this.jwtService = jwtService;
     }
 
     @PostConstruct
-    private void initAuthenticationFilter() throws Exception {
+    private void initFilters() throws Exception {
+        this.authorizationFilter = new AuthorizationFilter(jwtService);
         this.authenticationFilter = new AuthenticationFilter(props().getLoginUrl(), this.authenticationManager(), objectMapper());
-        this.authenticationFilter.setAuthenticationSuccessHandler(new LoginSuccessHandler(userDao));
+        this.authenticationFilter.setAuthenticationSuccessHandler(new LoginSuccessHandler(userDao, jwtService, objectMapper()));
         this.authenticationFilter.setAuthenticationFailureHandler(new LoginFailureHandler());
     }
 
@@ -72,6 +79,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .antMatchers(props().getUsersApiUrl(), props().getRolesApiUrl(), props().getGenresApiUrl()).hasRole("ADMIN")
             .anyRequest().authenticated().and()
             .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(authorizationFilter, authenticationFilter.getClass())
             .exceptionHandling()
             .accessDeniedHandler(new CustomAccessDeniedHandler())
             .authenticationEntryPoint(new AuthenticationEntryPointHandler()).and()
