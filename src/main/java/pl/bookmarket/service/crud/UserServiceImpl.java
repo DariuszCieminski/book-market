@@ -1,7 +1,9 @@
 package pl.bookmarket.service.crud;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
@@ -12,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
+@PreAuthorize("hasRole('ADMIN')")
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
@@ -32,6 +36,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("authentication.principal.id == #id or hasRole('ADMIN')")
     public Optional<User> getUserById(Long id) {
         return userDao.findById(id);
     }
@@ -45,6 +50,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    @PreAuthorize("permitAll()")
     public User createUser(User user) {
         validateLoginAndEmail(user);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -52,6 +59,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    @PreAuthorize("isAuthenticated()")
     public User updateUser(User user) {
         User byId = userDao.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException(User.class));
 
@@ -67,6 +76,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
         if (!userDao.existsById(id)) {
             throw new EntityNotFoundException(User.class);

@@ -1,5 +1,6 @@
 package pl.bookmarket.service.crud;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.model.Genre;
@@ -31,6 +32,7 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public Genre createGenre(Genre genre) {
         if (genreDao.existsGenreByName(genre.getName())) {
             throw new EntityValidationException("name", "name.occupied");
@@ -39,6 +41,7 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public Genre updateGenre(Genre genre) {
         Genre byId = genreDao.findById(genre.getId()).orElseThrow(() -> new EntityNotFoundException(Genre.class));
         if (genreDao.existsGenreByName(genre.getName()) && !genre.getName().equals(byId.getName())) {
@@ -48,6 +51,7 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteGenre(Long id) {
         if (!genreDao.existsById(id)) {
             throw new EntityNotFoundException(Genre.class);

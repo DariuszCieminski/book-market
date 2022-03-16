@@ -1,5 +1,6 @@
 package pl.bookmarket.service.crud;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.model.Role;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@PreAuthorize("hasRole('ADMIN')")
 public class RoleServiceImpl implements RoleService {
     private final RoleDao roleDao;
 

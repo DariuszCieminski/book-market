@@ -1,7 +1,9 @@
 package pl.bookmarket.service.crud;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.bookmarket.dao.OfferDao;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.model.Message;
@@ -17,8 +19,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.function.Predicate;
 
 @Service
+@Transactional(readOnly = true)
 public class MarketServiceImpl implements MarketService {
     private final UserService userService;
     private final BookService bookService;
@@ -35,24 +39,27 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
         Book book = bookService.getBookById(bookId).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        verifyUserPermissions(book.getOwner().getId());
+        verifyUserPermissions(book);
         return offerDao.getOffersByBookId(bookId);
     }
 
     @Override
+    @PreAuthorize("authentication.principal.id == #userId or hasRole('ADMIN')")
     public List<Offer> getOffersByUserId(Long userId) {
-        verifyUserPermissions(userId);
         return offerDao.getOffersByBuyerId(userId);
     }
 
     @Override
     public Optional<Offer> getOfferById(Long id) {
-        return offerDao.findById(id);
+        Optional<Offer> offerOptional = offerDao.findById(id);
+        offerOptional.ifPresent(this::verifyUserPermissions);
+        return offerOptional;
     }
 
     @Override
+    @Transactional
     public Offer addOffer(Offer offer) {
-        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
+        AuthenticatedUser authenticatedUser = AuthUtils.getCurrentUser(AuthenticatedUser.class);
 
         if (offer.getBook() == null || offer.getBook().getId() == null) {
             throw new EntityValidationException("book", "book.invalid");
@@ -90,20 +97,22 @@ public class MarketServiceImpl implements MarketService {
     }
 
     @Override
+    @Transactional
     public void acceptOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
         Book book = offer.getBook();
         User buyer = offer.getBuyer();
         User seller = book.getOwner();
 
-        verifyUserPermissions(seller.getId());
+        verifyUserPermissions(book);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new Message(seller, buyer, "{book.bought}: " + book.getTitle()));
 
         for (Offer o : book.getOffers()) {
-            if (o.getId().equals(offer.getId())) continue;
-            messages.add(new Message(seller, o.getBuyer(), "{book.sold}: " + book.getTitle()));
+            if (!o.getId().equals(offer.getId())) {
+                messages.add(new Message(seller, o.getBuyer(), "{book.sold}: " + book.getTitle()));
+            }
         }
 
         book.setOwner(buyer);
@@ -116,19 +125,29 @@ public class MarketServiceImpl implements MarketService {
     }
 
     @Override
+    @Transactional
     public void deleteOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
-        verifyUserPermissions(offer.getBuyer().getId());
+        verifyUserPermissions(offer);
 
         offerDao.delete(offer);
     }
 
-    private void verifyUserPermissions(Long userId) {
-        AuthenticatedUser authenticatedUser = AuthUtils.getAuthenticatedUser();
-        boolean validUser = userId.equals(authenticatedUser.getId());
+    private void verifyUserPermissions(Book book) {
+        Predicate<AuthenticatedUser> accessPredicate = user -> book.getOwner().getId()
+                                                                   .equals(user.getId()) || AuthUtils.isAdmin(user);
 
-        if (!validUser && authenticatedUser.getAuthorities().size() <= 1) {
-            throw new AccessDeniedException("The current user cannot perform this action.");
+        if (!AuthUtils.hasAccess(AuthenticatedUser.class, accessPredicate)) {
+            throw new AccessDeniedException("This book is owned by another user.");
+        }
+    }
+
+    private void verifyUserPermissions(Offer offer) {
+        Predicate<AuthenticatedUser> predicate = user -> offer.getBuyer().getId()
+                                                              .equals(user.getId()) || AuthUtils.isAdmin(user);
+
+        if (!AuthUtils.hasAccess(AuthenticatedUser.class, predicate)) {
+            throw new AccessDeniedException("This offer was made by another user.");
         }
     }
 }
