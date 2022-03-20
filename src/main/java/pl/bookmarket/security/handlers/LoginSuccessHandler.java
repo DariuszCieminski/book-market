@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.security.authentication.AuthenticatedUser;
 import pl.bookmarket.security.authentication.JwtService;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 
+@Component
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserDao userDao;

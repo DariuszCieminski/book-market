@@ -1,13 +1,11 @@
 package pl.bookmarket.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -19,17 +17,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import pl.bookmarket.dao.UserDao;
-import pl.bookmarket.security.authentication.JwtService;
 import pl.bookmarket.security.filters.AuthenticationFilter;
 import pl.bookmarket.security.filters.AuthorizationFilter;
 import pl.bookmarket.security.handlers.AuthenticationEntryPointHandler;
 import pl.bookmarket.security.handlers.CustomAccessDeniedHandler;
-import pl.bookmarket.security.handlers.LoginFailureHandler;
-import pl.bookmarket.security.handlers.LoginSuccessHandler;
 import pl.bookmarket.util.SecurityProperties;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 import static org.springframework.http.HttpMethod.DELETE;
@@ -44,24 +37,13 @@ import static org.springframework.http.HttpMethod.PUT;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final AuthenticationProvider authenticationProvider;
-    private final UserDao userDao;
-    private final JwtService jwtService;
+    private final AuthenticationFilter authenticationFilter;
+    private final AuthorizationFilter authorizationFilter;
 
-    private AuthenticationFilter authenticationFilter;
-    private AuthorizationFilter authorizationFilter;
-
-    public SecurityConfig(AuthenticationProvider authenticationProvider, UserDao userDao, JwtService jwtService) {
+    public SecurityConfig(AuthenticationProvider authenticationProvider, AuthenticationFilter authenticationFilter, AuthorizationFilter authorizationFilter) {
         this.authenticationProvider = authenticationProvider;
-        this.userDao = userDao;
-        this.jwtService = jwtService;
-    }
-
-    @PostConstruct
-    private void initFilters() throws Exception {
-        this.authorizationFilter = new AuthorizationFilter(jwtService);
-        this.authenticationFilter = new AuthenticationFilter(props().getLoginUrl(), this.authenticationManager(), objectMapper());
-        this.authenticationFilter.setAuthenticationSuccessHandler(new LoginSuccessHandler(userDao, jwtService, objectMapper()));
-        this.authenticationFilter.setAuthenticationFailureHandler(new LoginFailureHandler());
+        this.authenticationFilter = authenticationFilter;
+        this.authorizationFilter = authorizationFilter;
     }
 
     @Override
@@ -100,11 +82,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
-        return JsonMapper.builder()
-                         .addModule(new JavaTimeModule())
-                         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                         .build();
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Bean
+    public CookieSameSiteSupplier cookieSameSiteSupplier() {
+        return CookieSameSiteSupplier.ofStrict().whenHasName("refreshToken");
     }
 
     @Bean

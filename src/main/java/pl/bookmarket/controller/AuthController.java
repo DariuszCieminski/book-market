@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.bookmarket.security.authentication.JwtService;
+import pl.bookmarket.security.filters.AuthorizationFilter;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -16,7 +17,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("${bm.controllers.auth}")
 public class AuthController {
 
     private final JwtService jwtService;
@@ -32,7 +33,8 @@ public class AuthController {
                                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
                                    HttpServletResponse response) throws IOException {
         if (jwtService.validateToken(refreshToken.getValue())) {
-            Authentication authentication = jwtService.buildAuthentication(authHeader);
+            String oldAccessToken = authHeader.substring(AuthorizationFilter.AUTH_PREFIX.length());
+            Authentication authentication = jwtService.buildAuthentication(oldAccessToken);
             String newAccessToken = jwtService.generateAccessToken(authentication);
             String responseBody = mapper.writeValueAsString(Collections.singletonMap("accessToken", newAccessToken));
             response.getWriter().write(responseBody);

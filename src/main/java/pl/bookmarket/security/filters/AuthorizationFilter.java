@@ -3,6 +3,7 @@ package pl.bookmarket.security.filters;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import pl.bookmarket.security.authentication.JwtService;
 
@@ -12,9 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@Component
 public class AuthorizationFilter extends OncePerRequestFilter {
 
-    private static final String AUTH_PREFIX = "Bearer ";
+    public static final String AUTH_PREFIX = "Bearer ";
     private final JwtService jwtService;
 
     public AuthorizationFilter(JwtService jwtService) {

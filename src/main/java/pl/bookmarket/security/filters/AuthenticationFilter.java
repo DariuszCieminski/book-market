@@ -1,12 +1,17 @@
 package pl.bookmarket.security.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import javax.servlet.ServletException;
@@ -14,13 +19,23 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@Component
 public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
     private final ObjectMapper mapper;
 
-    public AuthenticationFilter(String defaultFilterProcessesUrl, AuthenticationManager authenticationManager, ObjectMapper objectMapper) {
-        super(defaultFilterProcessesUrl, authenticationManager);
+    public AuthenticationFilter(@Value("${bm.login-url}") String defaultFilterProcessesUrl, AuthenticationSuccessHandler successHandler,
+                                AuthenticationFailureHandler failureHandler, ObjectMapper objectMapper) {
+        super(defaultFilterProcessesUrl);
+        this.setAuthenticationSuccessHandler(successHandler);
+        this.setAuthenticationFailureHandler(failureHandler);
         this.mapper = objectMapper;
+    }
+
+    @Autowired
+    @Override
+    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+        super.setAuthenticationManager(authenticationManager);
     }
 
     @Override

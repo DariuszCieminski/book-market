@@ -40,6 +40,7 @@ bm:
         message: /api/messages
         role: /api/roles
         user: /api/users
+        auth: /api/auth
     login-url: /api/login
     cors-origins: "*"
     jwt:
