@@ -1,10 +1,13 @@
 package pl.bookmarket.security.authentication;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.jackson.io.JacksonDeserializer;
+import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,7 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.security.PrivateKey;
+import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -28,15 +31,18 @@ public class JwtServiceImpl implements JwtService {
 
     private final Long ACCESS_TOKEN_DURATION;
     private final Long REFRESH_TOKEN_DURATION;
-    private final PrivateKey secretKey;
+    private final KeyPair keys;
     private final JwtParser parser;
 
     public JwtServiceImpl(@Value("${bm.jwt.access-token-duration}") Long accessTokenDuration,
                           @Value("${bm.jwt.refresh-token-duration}") Long refreshTokenDuration) {
         this.ACCESS_TOKEN_DURATION = accessTokenDuration;
         this.REFRESH_TOKEN_DURATION = refreshTokenDuration;
-        this.secretKey = Keys.keyPairFor(SignatureAlgorithm.ES256).getPrivate();
-        this.parser = Jwts.parserBuilder().setSigningKey(secretKey).build();
+        this.keys = Keys.keyPairFor(SignatureAlgorithm.ES256);
+        this.parser = Jwts.parserBuilder()
+                          .deserializeJsonWith(new JacksonDeserializer(Maps.of(CLAIM_ROLES, String[].class).build()))
+                          .setSigningKey(keys.getPublic())
+                          .build();
     }
 
     @Override
@@ -44,7 +50,7 @@ public class JwtServiceImpl implements JwtService {
         checkAuthenticationType(authentication);
         AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
         Date expirationDate = new Date(Instant.now().plus(Duration.ofMinutes(ACCESS_TOKEN_DURATION)).toEpochMilli());
-        String[] userRoles = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toArray(String[]::new);
+        String[] userRoles = user.getAuthorities().stream().map(this::userAuthorityMapper).toArray(String[]::new);
 
         return Jwts.builder()
                    .setIssuer(ISSUER)
@@ -52,7 +58,7 @@ public class JwtServiceImpl implements JwtService {
                    .claim(CLAIM_ID, user.getId())
                    .claim(CLAIM_ROLES, userRoles)
                    .claim(CLAIM_ISREFRESH, false)
-                   .signWith(secretKey)
+                   .signWith(keys.getPrivate())
                    .compact();
     }
 
@@ -67,7 +73,7 @@ public class JwtServiceImpl implements JwtService {
                    .setExpiration(expirationDate)
                    .claim(CLAIM_ID, user.getId())
                    .claim(CLAIM_ISREFRESH, true)
-                   .signWith(secretKey)
+                   .signWith(keys.getPrivate())
                    .compact();
     }
 
@@ -75,7 +81,7 @@ public class JwtServiceImpl implements JwtService {
     public boolean validateToken(String token) {
         try {
             parser.parse(token);
-            if (!ISSUER.equals(getClaim(token, ISSUER, String.class))) {
+            if (!ISSUER.equals(getClaim(token, Claims.ISSUER, String.class))) {
                 throw new JwtException(null);
             }
             return true;
@@ -114,7 +120,12 @@ public class JwtServiceImpl implements JwtService {
 
         Long userId = getClaim(token, CLAIM_ID, Long.class);
         String[] roles = getClaim(token, CLAIM_ROLES, String[].class);
-        AuthenticatedUser principal = AuthenticatedUser.builder().id(userId).authorities(roles).build();
+        AuthenticatedUser principal = AuthenticatedUser.builder()
+                                                       .username(userId.toString())
+                                                       .password("[PROTECTED]")
+                                                       .id(userId)
+                                                       .authorities(roles)
+                                                       .build();
 
         return new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities());
     }
@@ -123,5 +134,13 @@ public class JwtServiceImpl implements JwtService {
         if (!(authentication.getPrincipal() instanceof AuthenticatedUser)) {
             throw new IllegalArgumentException("Authentication principal must be of type " + AuthenticatedUser.class.getSimpleName());
         }
+    }
+
+    private String userAuthorityMapper(GrantedAuthority grantedAuthority) {
+        String authority = grantedAuthority.getAuthority();
+        if (authority.startsWith("ROLE_")) {
+            return authority.substring(5);
+        }
+        return authority;
     }
 }

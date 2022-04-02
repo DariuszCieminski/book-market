@@ -35,11 +35,11 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         Long userId = ((AuthenticatedUser) authentication.getPrincipal()).getId();
         String responseBody = prepareLoginResponseBody(authentication, userId);
         Cookie refreshTokenCookie = AuthUtils.getRefreshTokenCookie(jwtService.generateRefreshToken(authentication));
+        userDao.updateLastLoginTime(userId, OffsetDateTime.now());
         response.getWriter().write(responseBody);
         response.addCookie(refreshTokenCookie);
         response.setStatus(HttpServletResponse.SC_OK);
         response.flushBuffer();
-        userDao.updateLastLoginTime(userId, OffsetDateTime.now());
     }
 
     private String prepareLoginResponseBody(Authentication authentication, Long userId) throws JsonProcessingException {

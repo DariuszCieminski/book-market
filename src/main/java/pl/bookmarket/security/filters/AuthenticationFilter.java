@@ -3,6 +3,7 @@ package pl.bookmarket.security.filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,6 +34,7 @@ public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter
     }
 
     @Autowired
+    @Lazy
     @Override
     public void setAuthenticationManager(AuthenticationManager authenticationManager) {
         super.setAuthenticationManager(authenticationManager);

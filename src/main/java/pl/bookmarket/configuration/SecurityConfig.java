@@ -1,7 +1,6 @@
 package pl.bookmarket.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -47,7 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    protected void configure(AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(authenticationProvider);
     }
 
@@ -57,10 +56,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .csrf().disable()
             .cors().configurationSource(getCorsConfigurationSource()).and()
             .authorizeRequests()
-            .antMatchers(props().getLoginUrl(), props().getErrorControllerUrl()).permitAll()
+            .antMatchers(securityProperties().getLoginUrl(), securityProperties().getErrorControllerUrl()).permitAll()
+            .antMatchers(POST, securityProperties().getUsersApiUrl()).permitAll()
             .anyRequest().authenticated().and()
             .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(authorizationFilter, authenticationFilter.getClass())
+            .addFilterBefore(authorizationFilter, AuthenticationFilter.class)
             .exceptionHandling()
             .accessDeniedHandler(new CustomAccessDeniedHandler())
             .authenticationEntryPoint(new AuthenticationEntryPointHandler()).and()
@@ -70,7 +70,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private CorsConfigurationSource getCorsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(props().getCorsOrigins());
+        configuration.setAllowedOrigins(securityProperties().getCorsOrigins());
         configuration.setAllowedMethods(Arrays.asList(GET.name(), POST.name(), PUT.name(), DELETE.name(), OPTIONS.name()));
         configuration.setAllowedHeaders(Arrays.asList(HttpHeaders.AUTHORIZATION));
         configuration.setAllowCredentials(true);
@@ -88,13 +88,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public CookieSameSiteSupplier cookieSameSiteSupplier() {
-        return CookieSameSiteSupplier.ofStrict().whenHasName("refreshToken");
-    }
-
-    @Bean
     @ConfigurationProperties
-    public SecurityProperties props() {
+    public SecurityProperties securityProperties() {
         return new SecurityProperties();
     }
 }

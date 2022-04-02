@@ -32,7 +32,6 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             authorizationToken = authorizationToken.substring(AUTH_PREFIX.length());
             if (jwtService.validateToken(authorizationToken)) {
                 Authentication authentication = jwtService.buildAuthentication(authorizationToken);
-                authentication.setAuthenticated(true);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

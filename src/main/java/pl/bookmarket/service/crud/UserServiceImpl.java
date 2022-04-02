@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
-@PreAuthorize("hasRole('ADMIN')")
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
@@ -42,6 +41,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
         userDao.findAll().forEach(userList::add);
@@ -51,7 +51,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @PreAuthorize("permitAll()")
     public User createUser(User user) {
         validateLoginAndEmail(user);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -60,7 +59,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("authentication.principal.id == #user.id or hasRole('ADMIN')")
     public User updateUser(User user) {
         User byId = userDao.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException(User.class));
 
@@ -77,6 +76,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(Long id) {
         if (!userDao.existsById(id)) {
             throw new EntityNotFoundException(User.class);
