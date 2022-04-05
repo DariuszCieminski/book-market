@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class UserCreateDto {
 
-    @NotBlank(message = "login.empty")
+    @NotBlank(message = "field.empty")
     @Size(min = 3, message = "login.size.min")
     @Size(max = 20, message = "login.size.max")
     @NotContain(message = "login.forbidden", values = {"admin", "superuser"})
@@ -21,14 +21,17 @@ public class UserCreateDto {
             "[^!@#$%^&*()=+\\-/\\[\\]{};:'`,.?|]+|[!@#$%^&*()=+\\-/\\[\\]{};:'`,.?|]+(\\w+|\\d+)\\S+")
     private String login;
 
+    @NotBlank(message = "field.empty")
     @Email(message = "email.invalid", regexp = "^[a-zA-Z0-9]{2,64}@[a-zA-Z0-9]{2,250}\\.[a-zA-Z0-9]{2,3}$")
     private String email;
 
-    @Pattern(message = "password.not.match.regex", regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")
+    @Null(groups = ValidationGroups.OnRegister.class, message = "field.not.null")
+    @Pattern(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class},
+             message = "password.not.match.regex", regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")
     private String password;
 
-    @Null(groups = ValidationGroups.OnRegister.class)
-    @NotEmpty(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class})
+    @Null(groups = ValidationGroups.OnRegister.class, message = "field.not.null")
+    @NotEmpty(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class}, message = "list.empty")
     private Set<RoleDto> roles;
 
     public String getLogin() {

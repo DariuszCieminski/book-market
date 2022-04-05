@@ -13,23 +13,26 @@ import pl.bookmarket.security.authentication.BearerTokenException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 @RestControllerAdvice
 public class RestControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    public ResponseEntity<Object> handleEntityNotFound(EntityNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                             .body(singletonMap("errors", singletonList(e.getError())));
     }
 
     @ExceptionHandler(EntityValidationException.class)
     public ResponseEntity<Object> handleEntityValidationException(EntityValidationException e) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                             .body(Collections.singletonMap("errors", Collections.singletonList(e.getError())));
+                             .body(singletonMap("errors", singletonList(e.getError())));
     }
 
     @ExceptionHandler(BearerTokenException.class)
@@ -43,7 +46,7 @@ public class RestControllerExceptionHandler extends ResponseEntityExceptionHandl
         List<ErrorDto> errorDtoList = ex.getFieldErrors().stream()
                                         .map(error -> new ErrorDto(error.getField(), error.getDefaultMessage()))
                                         .collect(Collectors.toList());
-        Map<String, List<ErrorDto>> responseBody = Collections.singletonMap("errors", errorDtoList);
+        Map<String, List<ErrorDto>> responseBody = singletonMap("errors", errorDtoList);
 
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(responseBody);
     }

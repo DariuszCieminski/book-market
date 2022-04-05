@@ -57,7 +57,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .cors().configurationSource(getCorsConfigurationSource()).and()
             .authorizeRequests()
             .antMatchers(securityProperties().getLoginUrl(), securityProperties().getErrorControllerUrl()).permitAll()
-            .antMatchers(POST, securityProperties().getUsersApiUrl()).permitAll()
+            .antMatchers(POST, securityProperties().getUsersApiUrl() + "/register").permitAll()
             .anyRequest().authenticated().and()
             .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(authorizationFilter, AuthenticationFilter.class)

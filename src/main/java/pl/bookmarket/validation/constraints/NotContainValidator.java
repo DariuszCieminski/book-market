@@ -15,6 +15,7 @@ public class NotContainValidator implements ConstraintValidator<NotContain, Stri
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
+        if (value == null) return true;
         return Arrays.stream(forbiddenValues).noneMatch(value.toLowerCase()::contains);
     }
 }
