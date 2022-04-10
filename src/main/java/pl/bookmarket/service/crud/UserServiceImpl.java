@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.User;
+import pl.bookmarket.util.PasswordGenerator;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
@@ -53,7 +54,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User createUser(User user) {
         validateLoginAndEmail(user);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(user.getPassword() == null ? PasswordGenerator.generate() : user.getPassword()));
         return userDao.save(user);
     }
 

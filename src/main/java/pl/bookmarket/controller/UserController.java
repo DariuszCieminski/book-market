@@ -1,10 +1,13 @@
 package pl.bookmarket.controller;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,8 +23,17 @@ import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.validation.ValidationGroups;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static pl.bookmarket.util.ObjectUtils.getFieldNamesByValueCondition;
 
 @RestController
 @RequestMapping("${bm.controllers.user}")
@@ -68,9 +80,33 @@ public class UserController {
         return userMapper.userToUserDto(userService.updateUser(toBeUpdated));
     }
 
+    @PatchMapping("/{id}")
+    @Transactional
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void patchUser(@RequestBody UserCreateDto user, @PathVariable Long id) {
+        user.setRoles(null);
+        Set<ConstraintViolation<UserCreateDto>> constraintViolations = validateObjectFields(user, getFieldNamesByValueCondition(user, Objects::nonNull));
+        if (constraintViolations.isEmpty()) {
+            User toBeUpdated = new User(userService.getUserById(id).orElseThrow(() -> new EntityNotFoundException(User.class)));
+            BeanUtils.copyProperties(user, toBeUpdated, getFieldNamesByValueCondition(user, Objects::isNull));
+            userService.updateUser(toBeUpdated);
+        } else {
+            throw new ConstraintViolationException(constraintViolations);
+        }
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+
+    private Set<ConstraintViolation<UserCreateDto>> validateObjectFields(UserCreateDto user, String... fieldsToValidate) {
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+        Set<ConstraintViolation<UserCreateDto>> violations = new HashSet<>(fieldsToValidate.length);
+        for (String field : fieldsToValidate) {
+            violations.addAll(validator.validateProperty(user, field, ValidationGroups.OnUpdate.class));
+        }
+        return violations;
     }
 }

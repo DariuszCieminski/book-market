@@ -9,6 +9,9 @@ import javax.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.function.Predicate;
 
+/**
+ * Provides useful utility methods to work with {@link Authentication} object.
+ */
 public final class AuthUtils {
 
     private AuthUtils() {

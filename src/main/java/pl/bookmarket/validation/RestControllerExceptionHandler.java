@@ -1,4 +1,4 @@
-package pl.bookmarket.validation.handlers;
+package pl.bookmarket.validation;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,8 +13,11 @@ import pl.bookmarket.security.authentication.BearerTokenException;
 import pl.bookmarket.validation.exceptions.EntityNotFoundException;
 import pl.bookmarket.validation.exceptions.EntityValidationException;
 
+import javax.validation.ConstraintViolationException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
@@ -35,6 +38,15 @@ public class RestControllerExceptionHandler extends ResponseEntityExceptionHandl
                              .body(singletonMap("errors", singletonList(e.getError())));
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException e) {
+        List<ErrorDto> errorDtoList = mapErrorCollectionToDto(e.getConstraintViolations(),
+                violation -> new ErrorDto(violation.getPropertyPath().toString(), violation.getMessage()));
+        Map<String, List<ErrorDto>> responseBody = singletonMap("errors", errorDtoList);
+
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(responseBody);
+    }
+
     @ExceptionHandler(BearerTokenException.class)
     public ResponseEntity<String> handleBearerTokenException(BearerTokenException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
@@ -43,11 +55,14 @@ public class RestControllerExceptionHandler extends ResponseEntityExceptionHandl
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers,
                                                                   HttpStatus status, WebRequest request) {
-        List<ErrorDto> errorDtoList = ex.getFieldErrors().stream()
-                                        .map(error -> new ErrorDto(error.getField(), error.getDefaultMessage()))
-                                        .collect(Collectors.toList());
+        List<ErrorDto> errorDtoList = mapErrorCollectionToDto(ex.getFieldErrors(),
+                error -> new ErrorDto(error.getField(), error.getDefaultMessage()));
         Map<String, List<ErrorDto>> responseBody = singletonMap("errors", errorDtoList);
 
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(responseBody);
+    }
+
+    private <E> List<ErrorDto> mapErrorCollectionToDto(Collection<E> errors, Function<E, ErrorDto> mapper) {
+        return errors.stream().map(mapper).collect(Collectors.toList());
     }
 }

@@ -58,6 +58,24 @@ public class User {
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.REMOVE)
     private Set<Message> receivedMessages;
 
+    public User() {
+    }
+
+    public User(User that) {
+        this.id = that.id;
+        this.login = that.login;
+        this.email = that.email;
+        this.password = that.password;
+        this.registerDate = that.registerDate;
+        this.lastLoginTime = that.lastLoginTime;
+        this.blocked = that.blocked;
+        this.roles = that.roles;
+        this.books = that.books;
+        this.offers = that.offers;
+        this.sentMessages = that.sentMessages;
+        this.receivedMessages = that.receivedMessages;
+    }
+
     public Long getId() {
         return id;
     }

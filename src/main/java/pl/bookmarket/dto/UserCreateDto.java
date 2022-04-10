@@ -26,8 +26,8 @@ public class UserCreateDto {
     private String email;
 
     @Null(groups = ValidationGroups.OnRegister.class, message = "field.not.null")
-    @Pattern(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class},
-             message = "password.not.match.regex", regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")
+    @Pattern(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class}, message = "password.invalid",
+            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!?@#$%^&*+-])[A-Za-z0-9!?@#$%^&*+-]{8,25}$")
     private String password;
 
     @Null(groups = ValidationGroups.OnRegister.class, message = "field.not.null")
