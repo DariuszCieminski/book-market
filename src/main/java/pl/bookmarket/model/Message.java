@@ -21,6 +21,7 @@ public class Message {
     @SequenceGenerator(name = "messageGenerator", sequenceName = "message_sequence", allocationSize = 1)
     private Long id;
 
+    @Column(length = 300)
     private String text;
 
     @ManyToOne(fetch = FetchType.LAZY)

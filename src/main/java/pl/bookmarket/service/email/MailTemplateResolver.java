@@ -5,13 +5,11 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import pl.bookmarket.util.MailType;
-
-import java.util.Map;
 
 @Service
 public class MailTemplateResolver {
 
+    private static final String NULL_VALUE = "<NULL>";
     private final TemplateEngine templateEngine;
 
     @Autowired
@@ -19,22 +17,10 @@ public class MailTemplateResolver {
         this.templateEngine = templateEngine;
     }
 
-    public String resolveTemplate(MailType mailType, Map<String, String> variables) {
+    public String resolveTemplate(Mailable mailable) {
         Context context = new Context();
         context.setLocale(LocaleContextHolder.getLocale());
-
-        switch (mailType) {
-            case ACCOUNT_CREATED:
-                context.setVariable("password", variables.getOrDefault("userPassword", "NULL"));
-                return templateEngine.process("email-accountcreated", context);
-            case PASSWORD_RESET:
-                context.setVariable("password", variables.getOrDefault("userPassword", "NULL"));
-                return templateEngine.process("email-passwordreset", context);
-            case EMAIL_CHANGED:
-                context.setVariable("user", variables.getOrDefault("user", "NULL"));
-                return templateEngine.process("email-changedemail", context);
-            default:
-                return "";
-        }
+        mailable.getTemplateVariables().forEach((k, v) -> context.setVariable(k, v == null ? NULL_VALUE : v));
+        return templateEngine.process(mailable.getTemplateName(), context);
     }
 }

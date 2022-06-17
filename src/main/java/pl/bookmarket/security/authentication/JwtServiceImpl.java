@@ -1,14 +1,17 @@
 package pl.bookmarket.security.authentication;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Clock;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.DefaultClock;
 import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,14 +37,20 @@ public class JwtServiceImpl implements JwtService {
     private final KeyPair keys;
     private final JwtParser parser;
 
+    @Autowired
     public JwtServiceImpl(@Value("${bm.jwt.access-token-duration}") Long accessTokenDuration,
                           @Value("${bm.jwt.refresh-token-duration}") Long refreshTokenDuration) {
+        this(accessTokenDuration, refreshTokenDuration, new DefaultClock());
+    }
+
+    public JwtServiceImpl(Long accessTokenDuration, Long refreshTokenDuration, Clock clock) {
         this.ACCESS_TOKEN_DURATION = accessTokenDuration;
         this.REFRESH_TOKEN_DURATION = refreshTokenDuration;
         this.keys = Keys.keyPairFor(SignatureAlgorithm.ES256);
         this.parser = Jwts.parserBuilder()
                           .deserializeJsonWith(new JacksonDeserializer(Maps.of(CLAIM_ROLES, String[].class).build()))
                           .setSigningKey(keys.getPublic())
+                          .setClock(clock)
                           .build();
     }
 
@@ -120,6 +129,9 @@ public class JwtServiceImpl implements JwtService {
 
         Long userId = getClaim(token, CLAIM_ID, Long.class);
         String[] roles = getClaim(token, CLAIM_ROLES, String[].class);
+        if (userId == null || roles == null) {
+            throw new BearerTokenException("Required claims are missing from token!");
+        }
         AuthenticatedUser principal = AuthenticatedUser.builder()
                                                        .username(userId.toString())
                                                        .password("[PROTECTED]")
@@ -131,7 +143,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     private void checkAuthenticationType(Authentication authentication) {
-        if (!(authentication.getPrincipal() instanceof AuthenticatedUser)) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser)) {
             throw new IllegalArgumentException("Authentication principal must be of type " + AuthenticatedUser.class.getSimpleName());
         }
     }

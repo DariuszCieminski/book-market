@@ -4,8 +4,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.GenreDao;
 import pl.bookmarket.model.Genre;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;

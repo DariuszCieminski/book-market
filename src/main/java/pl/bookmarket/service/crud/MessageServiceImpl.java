@@ -9,8 +9,8 @@ import pl.bookmarket.model.Message;
 import pl.bookmarket.model.User;
 import pl.bookmarket.security.authentication.AuthenticatedUser;
 import pl.bookmarket.util.AuthUtils;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityValidationException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -65,7 +65,7 @@ public class MessageServiceImpl implements MessageService {
     public Message updateMessage(Message message) {
         Message msg = messageDao.findById(message.getId())
                                 .orElseThrow(() -> new EntityNotFoundException(Message.class));
-        verifyUserPermissions(message);
+        verifyUserPermissions(msg);
         msg.setText(message.getText());
         msg.setRead(message.isRead());
         return messageDao.save(msg);
@@ -95,7 +95,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private void verifyUserPermissions(Message message) {
-        Predicate<AuthenticatedUser> predicate = user -> message.getReceiver().getId().equals(user.getId());
+        Predicate<AuthenticatedUser> predicate = user -> message.getSender().getId().equals(user.getId());
 
         if (!AuthUtils.hasAccess(AuthenticatedUser.class, predicate)) {
             throw new AccessDeniedException("The current user cannot perform this action.");

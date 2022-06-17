@@ -1,6 +1,6 @@
 package pl.bookmarket.dto;
 
-import pl.bookmarket.validation.constraints.ResetPassword;
+import pl.bookmarket.validation.constraint.ResetPassword;
 
 @ResetPassword
 public class ResetPasswordDto {

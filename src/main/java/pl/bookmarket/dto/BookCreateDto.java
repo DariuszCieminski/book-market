@@ -1,6 +1,9 @@
 package pl.bookmarket.dto;
 
+import pl.bookmarket.validation.constraint.YearMaxCurrent;
+
 import javax.validation.constraints.Digits;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
@@ -26,7 +29,8 @@ public class BookCreateDto {
     private String publisher;
 
     @NotNull(message = "field.blank")
-    @Positive(message = "field.not.positive.value")
+    @Min(value = 1500, message = "year.too.low")
+    @YearMaxCurrent(message = "year.too.high")
     private Integer releaseYear;
 
     private boolean forSale;

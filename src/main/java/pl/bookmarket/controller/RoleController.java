@@ -14,7 +14,7 @@ import pl.bookmarket.dto.RoleDto;
 import pl.bookmarket.mapper.RoleMapper;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.service.crud.RoleService;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;

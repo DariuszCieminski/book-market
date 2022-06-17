@@ -14,7 +14,7 @@ import pl.bookmarket.dto.BookDto;
 import pl.bookmarket.mapper.BookMapper;
 import pl.bookmarket.model.Book;
 import pl.bookmarket.service.crud.BookService;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;

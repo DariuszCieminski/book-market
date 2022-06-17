@@ -16,6 +16,7 @@ import pl.bookmarket.mapper.OfferMapper;
 import pl.bookmarket.model.Offer;
 import pl.bookmarket.service.crud.BookService;
 import pl.bookmarket.service.crud.MarketService;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -36,7 +37,7 @@ public class MarketController {
         this.bookMapper = bookMapper;
     }
 
-    @GetMapping("${bm.controllers.market}")
+    @GetMapping("${bm.controllers.book}/forsale")
     public List<BookDto> getBooksForSale() {
         return bookService.getBooksForSale().stream().map(bookMapper::bookToBookDto)
                           .collect(Collectors.toList());
@@ -52,6 +53,12 @@ public class MarketController {
     public List<OfferDto> getOffersForBook(@PathVariable Long id) {
         return marketService.getOffersForBook(id).stream().map(offerMapper::offerToOfferDto)
                             .collect(Collectors.toList());
+    }
+
+    @GetMapping("${bm.controllers.offer}/{id}")
+    public OfferDto getOfferById(@PathVariable Long id) {
+        return offerMapper.offerToOfferDto(marketService.getOfferById(id)
+                                                        .orElseThrow(() -> new EntityNotFoundException(Offer.class)));
     }
 
     @PostMapping("${bm.controllers.offer}")

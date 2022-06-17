@@ -10,7 +10,7 @@
     </parent>
     <groupId>pl</groupId>
     <artifactId>bookmarket</artifactId>
-    <version>1.5-alpha4</version>
+    <version>2.0.0-beta1</version>
     <name>Book Market</name>
     <description>An online platform to catalog your books and exchange them with others</description>
 
@@ -78,6 +78,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>4.0.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

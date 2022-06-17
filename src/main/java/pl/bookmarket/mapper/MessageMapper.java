@@ -10,7 +10,5 @@ public interface MessageMapper {
 
     MessageDto messageToMessageDto(Message message);
 
-    Message messageDtoToMessage(MessageDto messageDto);
-
     Message messageCreateDtoToMessage(MessageCreateDto messageCreateDto);
 }

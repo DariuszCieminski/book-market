@@ -4,8 +4,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.model.Role;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Role updateRole(Role role) {
         Role byId = roleDao.findById(role.getId()).orElseThrow(() -> new EntityNotFoundException(Role.class));
-        if (roleDao.existsRoleByName(role.getName()) && !byId.getId().equals(role.getId())) {
+        if (roleDao.existsRoleByName(role.getName()) && !byId.getName().equals(role.getName())) {
             throw new EntityValidationException("name", "name.occupied");
         }
         return roleDao.save(role);

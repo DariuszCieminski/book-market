@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-import pl.bookmarket.util.MailType;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -14,21 +13,21 @@ import java.util.Map.Entry;
 @Profile("mailDisabled")
 public class DummyMailServiceImpl implements MailService {
 
-    private static final Logger logger = LoggerFactory.getLogger(DummyMailServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DummyMailServiceImpl.class);
 
     @Override
-    public void sendMessage(String recipient, MailType mailType, Map<String, String> variables) {
-        String variablesString = variableMapToString(variables);
-        logger.info("The {} mail was sent to recipient ({}) with variables: {}", mailType, recipient, variablesString);
+    public void sendMail(Mailable mailable, String recipient) {
+        String variablesString = mailVariablesToString(mailable.getTemplateVariables());
+        LOG.info("The '{}' mail was sent to recipient ({}) with variables: {}", mailable.getTemplateName(), recipient, variablesString);
     }
 
-    private String variableMapToString(Map<String, String> variables) {
-        if (variables == null) {
+    private String mailVariablesToString(Map<String, String> variablesMap) {
+        if (variablesMap == null) {
             return "";
         }
 
         StringBuilder builder = new StringBuilder("{ ");
-        Iterator<Entry<String, String>> iterator = variables.entrySet().iterator();
+        Iterator<Entry<String, String>> iterator = variablesMap.entrySet().iterator();
 
         while (iterator.hasNext()) {
             Entry<String, String> entry = iterator.next();

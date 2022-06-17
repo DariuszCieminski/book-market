@@ -10,8 +10,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import pl.bookmarket.dto.ErrorDto;
 import pl.bookmarket.security.authentication.BearerTokenException;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityValidationException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.Collection;

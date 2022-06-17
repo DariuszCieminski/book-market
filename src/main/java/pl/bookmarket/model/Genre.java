@@ -21,6 +21,14 @@ public class Genre {
     @OneToMany(mappedBy = "genre")
     private Set<Book> books;
 
+    public Genre() {
+    }
+
+    public Genre(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }

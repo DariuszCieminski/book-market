@@ -1,6 +1,5 @@
 package pl.bookmarket.configuration;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -16,11 +15,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import pl.bookmarket.security.filters.AuthenticationFilter;
-import pl.bookmarket.security.filters.AuthorizationFilter;
-import pl.bookmarket.security.handlers.AuthenticationEntryPointHandler;
-import pl.bookmarket.security.handlers.CustomAccessDeniedHandler;
-import pl.bookmarket.util.SecurityProperties;
+import pl.bookmarket.security.filter.AuthenticationFilter;
+import pl.bookmarket.security.filter.AuthorizationFilter;
+import pl.bookmarket.security.handler.AuthenticationEntryPointHandler;
+import pl.bookmarket.security.handler.CustomAccessDeniedHandler;
+import pl.bookmarket.util.ApplicationProperties;
 
 import java.util.Arrays;
 
@@ -39,11 +38,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final AuthenticationProvider authenticationProvider;
     private final AuthenticationFilter authenticationFilter;
     private final AuthorizationFilter authorizationFilter;
+    private final ApplicationProperties properties;
 
-    public SecurityConfig(AuthenticationProvider authenticationProvider, AuthenticationFilter authenticationFilter, AuthorizationFilter authorizationFilter) {
+    public SecurityConfig(AuthenticationProvider authenticationProvider, AuthenticationFilter authenticationFilter, AuthorizationFilter authorizationFilter, ApplicationProperties properties) {
         this.authenticationProvider = authenticationProvider;
         this.authenticationFilter = authenticationFilter;
         this.authorizationFilter = authorizationFilter;
+        this.properties = properties;
     }
 
     @Override
@@ -57,8 +58,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .csrf().disable()
             .cors().configurationSource(getCorsConfigurationSource()).and()
             .authorizeRequests()
-            .antMatchers(securityProperties().getLoginUrl(), securityProperties().getErrorControllerUrl()).permitAll()
-            .antMatchers(POST, securityProperties().getUsersApiUrl() + "/register").permitAll()
+            .antMatchers(properties.getLoginUrl(), properties.getErrorControllerUrl()).permitAll()
+            .antMatchers(POST, properties.getUsersApiUrl() + "/register").permitAll()
+            .antMatchers(POST, properties.getAuthApiUrl() + "/refresh-token").permitAll()
             .anyRequest().authenticated().and()
             .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(authorizationFilter, AuthenticationFilter.class)
@@ -71,7 +73,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private CorsConfigurationSource getCorsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(securityProperties().getCorsOrigins());
+        configuration.setAllowedOrigins(properties.getCorsOrigins());
         configuration.setAllowedMethods(Arrays.asList(GET.name(), POST.name(), PUT.name(), PATCH.name(), DELETE.name(), OPTIONS.name()));
         configuration.setAllowedHeaders(Arrays.asList(HttpHeaders.AUTHORIZATION));
         configuration.setAllowCredentials(true);
@@ -86,11 +88,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
-    }
-
-    @Bean
-    @ConfigurationProperties
-    public SecurityProperties securityProperties() {
-        return new SecurityProperties();
     }
 }

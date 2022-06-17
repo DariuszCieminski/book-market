@@ -1,5 +1,7 @@
 package pl.bookmarket.dto;
 
+import pl.bookmarket.validation.ValidationGroups;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -10,7 +12,7 @@ public class MessageCreateDto {
     @Size(max = 300, message = "message.too.long")
     private String text;
 
-    @NotNull(message = "receiver.invalid")
+    @NotNull(message = "receiver.invalid", groups = ValidationGroups.OnCreate.class)
     private UserSimpleDto receiver;
 
     public String getText() {

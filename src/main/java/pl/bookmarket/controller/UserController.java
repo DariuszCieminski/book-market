@@ -21,7 +21,7 @@ import pl.bookmarket.mapper.UserMapper;
 import pl.bookmarket.model.User;
 import pl.bookmarket.service.crud.UserService;
 import pl.bookmarket.validation.ValidationGroups;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -53,6 +53,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("authentication.principal.id == #id or hasRole('ADMIN')")
     public UserDto getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id).orElseThrow(() -> new EntityNotFoundException(User.class));
         return userMapper.userToUserDto(user);

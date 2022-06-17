@@ -14,7 +14,7 @@ import pl.bookmarket.dto.GenreDto;
 import pl.bookmarket.mapper.GenreMapper;
 import pl.bookmarket.model.Genre;
 import pl.bookmarket.service.crud.GenreService;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
 
 import javax.validation.Valid;
 import java.util.List;

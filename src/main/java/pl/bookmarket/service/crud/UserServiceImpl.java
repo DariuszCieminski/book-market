@@ -4,13 +4,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.bookmarket.dao.RoleDao;
 import pl.bookmarket.dao.UserDao;
+import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
+import pl.bookmarket.service.email.MailService;
+import pl.bookmarket.service.email.template.AccountCreatedMailable;
 import pl.bookmarket.util.PasswordGenerator;
-import pl.bookmarket.validation.exceptions.EntityNotFoundException;
-import pl.bookmarket.validation.exceptions.EntityValidationException;
+import pl.bookmarket.validation.exception.EntityNotFoundException;
+import pl.bookmarket.validation.exception.EntityValidationException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,10 +23,14 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
+    private final RoleDao roleDao;
+    private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserDao userDao, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserDao userDao, RoleDao roleDao, MailService mailService, PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
+        this.roleDao = roleDao;
+        this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -36,7 +45,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @PreAuthorize("authentication.principal.id == #id or hasRole('ADMIN')")
     public Optional<User> getUserById(Long id) {
         return userDao.findById(id);
     }
@@ -54,7 +62,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User createUser(User user) {
         validateLoginAndEmail(user);
+        verifyUserRoles(user);
         user.setPassword(passwordEncoder.encode(user.getPassword() == null ? PasswordGenerator.generate() : user.getPassword()));
+        mailService.sendMail(new AccountCreatedMailable(user.getLogin(), user.getPassword()), user.getEmail());
         return userDao.save(user);
     }
 
@@ -65,6 +75,7 @@ public class UserServiceImpl implements UserService {
         User byId = userDao.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException(User.class));
 
         validateLoginAndEmail(user);
+        verifyUserRoles(user);
 
         if (user.getPassword() == null) {
             user.setPassword(byId.getPassword());
@@ -96,6 +107,14 @@ public class UserServiceImpl implements UserService {
 
         if (byEmail != null && !byEmail.getId().equals(user.getId())) {
             throw new EntityValidationException("email", "email.occupied");
+        }
+    }
+
+    private void verifyUserRoles(User user) {
+        if (user.getRoles() == null || user.getRoles().size() == 0) {
+            Role defaultRole = roleDao.findRoleByName("USER")
+                                      .orElseThrow(() -> new EntityNotFoundException(Role.class));
+            user.setRoles(Collections.singleton(defaultRole));
         }
     }
 }

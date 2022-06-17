@@ -35,7 +35,6 @@ bm:
     controllers:
         book: /api/books
         genre: /api/genres
-        market: /api/market
         offer: /api/offers
         message: /api/messages
         role: /api/roles

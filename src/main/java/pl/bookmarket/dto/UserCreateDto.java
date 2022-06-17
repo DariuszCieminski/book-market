@@ -1,7 +1,7 @@
 package pl.bookmarket.dto;
 
 import pl.bookmarket.validation.ValidationGroups;
-import pl.bookmarket.validation.constraints.NotContain;
+import pl.bookmarket.validation.constraint.NotContain;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -26,6 +26,7 @@ public class UserCreateDto {
     private String email;
 
     @Null(groups = ValidationGroups.OnRegister.class, message = "field.not.null")
+    @NotBlank(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class}, message = "field.empty")
     @Pattern(groups = {ValidationGroups.OnCreate.class, ValidationGroups.OnUpdate.class}, message = "password.invalid",
             regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!?@#$%^&*+-])[A-Za-z0-9!?@#$%^&*+-]{8,25}$")
     private String password;

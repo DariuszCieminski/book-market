@@ -1,10 +1,12 @@
 package pl.bookmarket.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +19,7 @@ import pl.bookmarket.dto.MessageDto;
 import pl.bookmarket.mapper.MessageMapper;
 import pl.bookmarket.model.Message;
 import pl.bookmarket.service.crud.MessageService;
+import pl.bookmarket.validation.ValidationGroups.OnCreate;
 
 import javax.validation.Valid;
 import java.beans.PropertyEditorSupport;
@@ -49,20 +52,20 @@ public class MessageController {
 
     @PostMapping("${bm.controllers.message}")
     @ResponseStatus(HttpStatus.CREATED)
-    public MessageDto sendMessage(@Valid @RequestBody MessageCreateDto message) {
+    public MessageDto sendMessage(@Validated(OnCreate.class) @RequestBody MessageCreateDto message) {
         Message created = messageService.createMessage(messageMapper.messageCreateDtoToMessage(message));
         return messageMapper.messageToMessageDto(created);
     }
 
-    @PutMapping("${bm.controllers.message}")
+    @PatchMapping("${bm.controllers.message}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setMessagesReadForUser(@RequestParam("ids") List<Long> messageIdsList) {
+    public void setMessagesReadForUser(@RequestBody List<Long> messageIdsList) {
         messageService.setMessagesRead(messageIdsList);
     }
 
     @PutMapping("${bm.controllers.message}/{id}")
-    public MessageDto updateMessage(@Valid @RequestBody MessageDto message, @PathVariable Long id) {
-        Message toBeUpdated = messageMapper.messageDtoToMessage(message);
+    public MessageDto updateMessage(@Valid @RequestBody MessageCreateDto message, @PathVariable Long id) {
+        Message toBeUpdated = messageMapper.messageCreateDtoToMessage(message);
         toBeUpdated.setId(id);
         return messageMapper.messageToMessageDto(messageService.updateMessage(toBeUpdated));
     }
