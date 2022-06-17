@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.internet.InternetAddress;
 
 @Service
-@Profile("!mailDisabled")
+@Profile("!no-email")
 public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;

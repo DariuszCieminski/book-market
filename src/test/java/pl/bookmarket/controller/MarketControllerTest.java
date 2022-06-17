@@ -176,10 +176,9 @@ class MarketControllerTest {
     @Sql(statements = "UPDATE BOOK SET FOR_SALE = true", scripts = {"/deleteMessages.sql", "/deleteOffers.sql"})
     @SqlMergeMode(MERGE)
     void shouldSuccessfullyAddNewOfferForBook() throws Exception {
-        String comment = "Can we exchange books?";
         OfferCreateDto offerCreateDto = new OfferCreateBuilder()
                 .withBookId(3L)
-                .withComment(comment)
+                .withComment("Can we exchange books?")
                 .build();
 
         mockMvc.perform(post(offerControllerUrl).secure(true)
@@ -193,7 +192,7 @@ class MarketControllerTest {
         mockMvc.perform(get(userControllerUrl + "/2/messages").secure(true))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].text", containsString(comment)))
+               .andExpect(jsonPath("$[0].text", containsString("new.offer")))
                .andExpect(jsonPath("$[0].sender.id", equalsId(2L)))
                .andExpect(jsonPath("$[0].receiver.id", equalsId(1L)));
     }
@@ -248,6 +247,21 @@ class MarketControllerTest {
                .andExpect(status().isUnprocessableEntity())
                .andExpect(jsonPath("$.errors", hasItem(hasEntry(equalTo("field"), equalTo("book.owner")))))
                .andExpect(jsonPath("$.errors", hasItem(hasEntry(equalTo("errorCode"), equalTo("own.book.offer")))));
+    }
+
+    @Test
+    void shouldThrow422WhenAddingAnotherOfferForTheSameBook() throws Exception {
+        OfferCreateDto offerCreateDto = new OfferCreateBuilder()
+                .withBookId(4L)
+                .withComment("Another offer is coming!")
+                .build();
+
+        mockMvc.perform(post(offerControllerUrl).secure(true)
+                                                .content(mapper.writeValueAsString(offerCreateDto))
+                                                .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isUnprocessableEntity())
+               .andExpect(jsonPath("$.errors", hasItem(hasEntry(equalTo("field"), equalTo("offer.buyer")))))
+               .andExpect(jsonPath("$.errors", hasItem(hasEntry(equalTo("errorCode"), equalTo("offer.exists.for.user")))));
     }
 
     @Test

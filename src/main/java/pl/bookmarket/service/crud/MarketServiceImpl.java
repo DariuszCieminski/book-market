@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.StringJoiner;
 import java.util.function.Predicate;
 
 @Service
@@ -41,7 +40,7 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public List<Offer> getOffersForBook(Long bookId) {
         Book book = bookDao.findById(bookId).orElseThrow(() -> new EntityNotFoundException(Book.class));
-        verifyUserPermissions(book);
+        verifyCurrentUserPermissions(book.getOwner());
         return offerDao.getOffersByBookId(bookId);
     }
 
@@ -57,7 +56,7 @@ public class MarketServiceImpl implements MarketService {
     @Override
     public Optional<Offer> getOfferById(Long id) {
         Optional<Offer> offerOptional = offerDao.findById(id);
-        offerOptional.ifPresent(this::verifyUserPermissions);
+        offerOptional.ifPresent(offer -> verifyCurrentUserPermissions(offer.getBuyer()));
         return offerOptional;
     }
 
@@ -73,28 +72,14 @@ public class MarketServiceImpl implements MarketService {
         Book book = bookDao.findById(offer.getBook().getId())
                            .orElseThrow(() -> new EntityNotFoundException(Book.class));
 
-        if (!book.isForSale()) {
-            throw new EntityValidationException("book", "book.not.for.sale");
-        }
-
-        if (book.getOwner().getId().equals(authenticatedUser.getId())) {
-            throw new EntityValidationException("book.owner", "own.book.offer");
-        }
+        validateBook(book, authenticatedUser);
 
         User currentUser = userDao.findById(authenticatedUser.getId()).orElseThrow(NoSuchElementException::new);
         offer.setBuyer(currentUser);
         offer.setBook(book);
 
         //send message to book owner, that a new offer for his book has been made
-        //used message codes and delimiter '|' for new line
-        StringJoiner sj = new StringJoiner("|");
-        sj.add(String.format("{new.offer} \"%s\"", book.getTitle()));
-
-        if (!offer.getComment().isEmpty()) {
-            sj.add(String.format("{comment}: %s", offer.getComment()));
-        }
-
-        Message message = new Message(currentUser, book.getOwner(), sj.toString());
+        Message message = new Message(currentUser, book.getOwner(), String.format("{new.offer} \"%s\"", book.getTitle()));
         messageService.createMessage(message);
 
         return offerDao.save(offer);
@@ -108,7 +93,7 @@ public class MarketServiceImpl implements MarketService {
         User buyer = offer.getBuyer();
         User seller = book.getOwner();
 
-        verifyUserPermissions(book);
+        verifyCurrentUserPermissions(book.getOwner());
 
         List<Message> messages = new ArrayList<>();
         messages.add(new Message(seller, buyer, "{book.bought}: " + book.getTitle()));
@@ -132,26 +117,32 @@ public class MarketServiceImpl implements MarketService {
     @Transactional
     public void deleteOffer(Long id) {
         Offer offer = offerDao.findById(id).orElseThrow(() -> new EntityNotFoundException(Offer.class));
-        verifyUserPermissions(offer);
+        verifyCurrentUserPermissions(offer.getBuyer());
 
         offerDao.delete(offer);
     }
 
-    private void verifyUserPermissions(Book book) {
-        Predicate<AuthenticatedUser> accessPredicate = user -> book.getOwner().getId()
-                                                                   .equals(user.getId()) || AuthUtils.isAdmin(user);
+    private void verifyCurrentUserPermissions(User entityOwner) {
+        Predicate<AuthenticatedUser> accessPredicate = user -> user.getId()
+                                                                   .equals(entityOwner.getId()) || AuthUtils.isAdmin(user);
 
         if (!AuthUtils.hasAccess(AuthenticatedUser.class, accessPredicate)) {
-            throw new AccessDeniedException("This book is owned by another user.");
+            throw new AccessDeniedException("The current user cannot perform this action.");
         }
     }
 
-    private void verifyUserPermissions(Offer offer) {
-        Predicate<AuthenticatedUser> predicate = user -> offer.getBuyer().getId()
-                                                              .equals(user.getId()) || AuthUtils.isAdmin(user);
+    private void validateBook(Book book, AuthenticatedUser authenticatedUser) {
+        if (!book.isForSale()) {
+            throw new EntityValidationException("book", "book.not.for.sale");
+        }
 
-        if (!AuthUtils.hasAccess(AuthenticatedUser.class, predicate)) {
-            throw new AccessDeniedException("This offer was made by another user.");
+        if (book.getOwner().getId().equals(authenticatedUser.getId())) {
+            throw new EntityValidationException("book.owner", "own.book.offer");
+        }
+
+        if (book.getOffers().stream()
+                .anyMatch(bookOffer -> bookOffer.getBuyer().getId().equals(authenticatedUser.getId()))) {
+            throw new EntityValidationException("offer.buyer", "offer.exists.for.user");
         }
     }
 }

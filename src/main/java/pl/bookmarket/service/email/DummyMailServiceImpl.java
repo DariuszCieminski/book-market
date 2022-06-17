@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 @Service
-@Profile("mailDisabled")
+@Profile("no-email")
 public class DummyMailServiceImpl implements MailService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DummyMailServiceImpl.class);
