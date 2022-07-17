@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <th:block th:replace="common::head(title=#{account.created})"></th:block>
+    <style>
+        body {
+            background-color: #efe;
+        }
+
+        .greeting {
+            text-align: center;
+            margin: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            font-size: x-large;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="common::navbar"></div>
+<div class="container">
+    <h2 class="greeting" th:text="#{greeting.message(${login})}"></h2>
+    <span th:text="#{account.created}"></span>
+    <span th:utext="#{user.password(${password})}"></span>
+    <span th:text="#{pwd.change.reminder}"></span>
+    <span th:text="#{app.enjoyment.wish}"></span>
+</div>
+</body>
+</html>

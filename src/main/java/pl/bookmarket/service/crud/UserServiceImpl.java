@@ -9,7 +9,7 @@ import pl.bookmarket.dao.UserDao;
 import pl.bookmarket.model.Role;
 import pl.bookmarket.model.User;
 import pl.bookmarket.service.email.MailService;
-import pl.bookmarket.service.email.template.AccountCreatedMailable;
+import pl.bookmarket.service.email.template.AccountCreatedMail;
 import pl.bookmarket.util.PasswordGenerator;
 import pl.bookmarket.validation.exception.EntityNotFoundException;
 import pl.bookmarket.validation.exception.EntityValidationException;
@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
         validateLoginAndEmail(user);
         verifyUserRoles(user);
         user.setPassword(passwordEncoder.encode(user.getPassword() == null ? PasswordGenerator.generate() : user.getPassword()));
-        mailService.sendMail(new AccountCreatedMailable(user.getLogin(), user.getPassword()), user.getEmail());
+        mailService.sendMail(new AccountCreatedMail(user.getLogin(), user.getPassword()), user.getEmail());
         return userDao.save(user);
     }
 
@@ -111,7 +111,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void verifyUserRoles(User user) {
-        if (user.getRoles() == null || user.getRoles().size() == 0) {
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
             Role defaultRole = roleDao.findRoleByName("USER")
                                       .orElseThrow(() -> new EntityNotFoundException(Role.class));
             user.setRoles(Collections.singleton(defaultRole));

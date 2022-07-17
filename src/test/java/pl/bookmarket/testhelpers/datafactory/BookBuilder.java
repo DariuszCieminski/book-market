@@ -96,7 +96,7 @@ public class BookBuilder {
         bookBuilder.book.setPages(500);
         bookBuilder.book.setPublisher("Publisher");
         bookBuilder.book.setReleaseYear(2015);
-        bookBuilder.book.setOwner(null);
+        bookBuilder.book.setOwner(UserBuilder.getDefaultUser().build());
         bookBuilder.book.setForSale(false);
         bookBuilder.book.setPrice(null);
         bookBuilder.book.setOffers(Collections.emptySet());

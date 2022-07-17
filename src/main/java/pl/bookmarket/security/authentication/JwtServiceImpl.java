@@ -89,7 +89,7 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean validateToken(String token) {
         try {
-            parser.parse(token);
+            parser.parseClaimsJws(token);
             if (!ISSUER.equals(getClaim(token, Claims.ISSUER, String.class))) {
                 throw new JwtException(null);
             }
@@ -123,7 +123,7 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public Authentication buildAuthentication(String token) throws BearerTokenException {
-        if (getClaim(token, CLAIM_ISREFRESH, Boolean.class)) {
+        if (Boolean.TRUE.equals(getClaim(token, CLAIM_ISREFRESH, Boolean.class))) {
             throw new BearerTokenException("Authentication object cannot be built from refresh token!");
         }
 

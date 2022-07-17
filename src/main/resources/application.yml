@@ -1,8 +1,8 @@
 spring:
     datasource:
         url: jdbc:h2:mem:test
-        username: sa
-        password: sa
+        username:
+        password:
     jpa:
         hibernate:
             ddl-auto: update

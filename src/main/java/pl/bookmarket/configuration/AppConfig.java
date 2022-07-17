@@ -20,7 +20,7 @@ public class AppConfig {
     @Bean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.setBasename("locale/messages");
+        messageSource.setBasename("classpath:locale/messages");
         messageSource.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         return messageSource;
     }

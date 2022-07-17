@@ -2,6 +2,7 @@ package pl.bookmarket.dto;
 
 public class OfferDto {
     private Long id;
+    private String comment;
     private BookDto book;
     private UserSimpleDto buyer;
 
@@ -11,6 +12,14 @@ public class OfferDto {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
     public BookDto getBook() {
